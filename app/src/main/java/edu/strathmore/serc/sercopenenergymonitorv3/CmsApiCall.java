@@ -1,6 +1,5 @@
 package edu.strathmore.serc.sercopenenergymonitorv3;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -22,7 +21,6 @@ import java.net.URL;
 public class CmsApiCall extends AsyncTask<String, Void, String> {
 
     private Context mContext;
-    private ProgressDialog dialog;
     public AsyncResponse delegate = null;
     private boolean hasError = false;
 
@@ -35,15 +33,7 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
         mContext = context;
     }
 
-    public CmsApiCall(Context context) {
-        mContext = context;
 
-    }
-
-    @Override
-    protected void onPreExecute() {
-
-    }
 
 
     @Override

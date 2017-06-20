@@ -643,6 +643,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     // Makes sure this loop does not repeat again while activity has not closed
                     firstTimeLaunch = false;
 
+
                 } else{
 
                     // Clear the adapter and load up new content to adapter
