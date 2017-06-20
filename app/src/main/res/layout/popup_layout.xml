@@ -16,6 +16,27 @@
 
         <LinearLayout
             android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Location Details"
+                android:gravity="center"
+                android:textSize="24sp"
+                android:textAppearance="@style/Base.ThemeOverlay.AppCompat"
+                android:textColor="@android:color/white"
+                android:background="@color/colorPrimary"/>
+
+
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
@@ -28,7 +49,7 @@
                 android:id="@+id/popup_location_id"
                 style="@style/PopupTextView"
                 tools:text="56"
-                android:layout_weight="4"/>
+                android:layout_weight="5"/>
 
         </LinearLayout>
 
@@ -46,7 +67,7 @@
                 android:id="@+id/popup_location_tags"
                 style="@style/PopupTextView"
                 tools:text="Strathmore Cafeteria"
-                android:layout_weight="4"/>
+                android:layout_weight="5"/>
 
         </LinearLayout>
 
@@ -65,7 +86,7 @@
                 android:id="@+id/popup_location_name"
                 style="@style/PopupTextView"
                 tools:text="Strathmore Cafeteria: R"
-                android:layout_weight="4"/>
+                android:layout_weight="5"/>
 
         </LinearLayout>
 
@@ -83,7 +104,7 @@
                 android:id="@+id/popup_location_reading"
                 style="@style/PopupTextView"
                 tools:text="5131W"
-                android:layout_weight="4"/>
+                android:layout_weight="5"/>
 
         </LinearLayout>
 
@@ -103,7 +124,7 @@
                 tools:text="12/06/2016 1400hrs"
                 android:gravity="center_vertical"
                 android:layout_height="match_parent"
-                android:layout_weight="4"/>
+                android:layout_weight="5"/>
 
         </LinearLayout>
 

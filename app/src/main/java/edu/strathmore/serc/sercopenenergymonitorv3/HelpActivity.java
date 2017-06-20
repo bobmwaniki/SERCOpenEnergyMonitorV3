@@ -95,7 +95,7 @@ public class HelpActivity extends AhoyOnboarderActivity {
 
     @Override
     public void onFinishButtonPressed() {
-        Intent goToMain = new Intent(this, MainActivity.class);
+        Intent goToMain = new Intent(this, MainActivityRecyclerView.class);
         startActivity(goToMain);
     }
 }
