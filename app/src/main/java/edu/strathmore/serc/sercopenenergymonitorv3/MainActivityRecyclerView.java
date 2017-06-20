@@ -386,7 +386,6 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
     // Main method that sets up all the cards in the main screen
     public void setUpLocationsForMainScreen(){
-
         // Get Root/API key from settings
         final SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
         rootLinkAddress = appSettings.getString("root_link_editpref","");
