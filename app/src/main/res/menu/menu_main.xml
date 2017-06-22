@@ -24,11 +24,14 @@
         app:showAsAction="never"
         />
 
-    <!--<item
-        android:id="@+id/recycler_main_activity"
-        android:orderInCategory="2000"
-        android:title="Recycler Main"
+    <item
+        android:id="@+id/action_live_data"
+        android:orderInCategory="1200"
+        android:title="Live Data"
         app:showAsAction="never"
-        />-->
+        android:checkable="true"
+        />
+
+
 
 </menu>

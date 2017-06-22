@@ -170,6 +170,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     }
 
+    public void notifyMassDataChange(ArrayList<RecordingStation> recordingStations){
+        mRecordingStations.clear();
+        mRecordingStations = recordingStations;
+        notifyDataSetChanged();
+    }
+
 
 }
 

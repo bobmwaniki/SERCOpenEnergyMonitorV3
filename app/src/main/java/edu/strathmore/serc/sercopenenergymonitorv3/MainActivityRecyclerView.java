@@ -4,10 +4,14 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -60,8 +64,27 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     // Result from EmonCms
     private String resultFromEmonCms = "";
 
+    // Needed in more than one method
+    private RecyclerView recyclerView;
+
     // Checks if the activity is launching
     private boolean firstTimeLaunch = true;
+
+    // Needed for live data
+    private Handler timerHandler;
+    private boolean isShowingLive = false;
+    private int fetchInterval;
+    private int intervalBalance = 500;
+    private Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            setUpLocationsForMainScreen();
+            timerHandler.postDelayed(this, intervalBalance);
+        }
+    };
+
+    // For snackbar
+    CoordinatorLayout coordinatorLayout;
 
 
     @Override
@@ -70,12 +93,18 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_recycler_view);
 
+        // For the Snackbar called in the menu
+        coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout_main);
+
         // Set up toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         // Gets the API key from settings (Shared Preferences)
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
+
+        // Get the fetch interval from settings
+        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000 - intervalBalance;
 
         // Used to put the default account settings for SERC
         /*SharedPreferences.Editor editor = appSettings.edit();
@@ -128,6 +157,8 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
         }
 
+        timerHandler = new Handler();
+
 
         // Set up the locations in the main screen
         setUpLocationsForMainScreen();
@@ -139,8 +170,12 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener(){
             @Override
             public void onRefresh(){
+                swipeRefreshLayout.setRefreshing(true);
+
                 // Calls the refresh content method defined within this class
-                refreshContent();
+                setUpLocationsForMainScreen();
+
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
 
@@ -158,26 +193,86 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
     // Defines the actions to take on button click for the menu items
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(final MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
-            Intent openSettingsIntent = new Intent(this, SettingsActivity.class);
-            startActivity(openSettingsIntent);
-            return true;
-        }
-        if (id==R.id.action_about){
-            Intent openAboutIntent = new Intent(this, AboutActivity.class);
-            startActivity(openAboutIntent);
-            return true;
-        }
-        if (id==R.id.action_help){
-            Intent openHelpIntent = new Intent(this, HelpActivity.class);
-            startActivity(openHelpIntent);
-            return true;
+        switch (id) {
+
+            case  (R.id.action_settings):
+                Intent openSettingsIntent = new Intent(this, SettingsActivity.class);
+                startActivity(openSettingsIntent);
+                return true;
+            case  (R.id.action_about):
+                Intent openAboutIntent = new Intent(this, AboutActivity.class);
+                startActivity(openAboutIntent);
+                return true;
+            case (R.id.action_help):
+                Intent openHelpIntent = new Intent(this, HelpActivity.class);
+                startActivity(openHelpIntent);
+                return true;
+            case (R.id.action_live_data):
+
+                // Don't show Live Data
+                if (item.isChecked()) {
+
+                    isShowingLive = false;
+                    item.setChecked(false);
+                    timerHandler.removeCallbacks(timerRunnable);
+
+                    // Snackbar
+                    Snackbar snackbar = Snackbar.make(coordinatorLayout, "No longer showing live data", Snackbar.LENGTH_LONG)
+                            .setAction("UNDO", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    item.setChecked(true);
+                                    isShowingLive = true;
+
+                                    timerHandler.postDelayed(timerRunnable, fetchInterval);
+                                }
+                            });
+                    // Changing message text color
+                    snackbar.setActionTextColor(Color.RED);
+
+                    // Changing action button text color
+                    View sbView = snackbar.getView();
+                    TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                    textView.setTextColor(Color.YELLOW);
+
+                    snackbar.show();
+
+
+                }
+                // Show live data
+                else {
+                    item.setChecked(true);
+                    isShowingLive = true;
+                    timerHandler.postDelayed(timerRunnable, fetchInterval);
+
+                    // Snackbar
+                    Snackbar snackbar = Snackbar.make(coordinatorLayout, "Now showing live data", Snackbar.LENGTH_LONG)
+                            .setAction("UNDO", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    isShowingLive = false;
+                                    item.setChecked(false);
+                                    timerHandler.removeCallbacks(timerRunnable);
+                                }
+                            });
+                    // Changing message text color
+                    snackbar.setActionTextColor(Color.RED);
+
+                    // Changing action button text color
+                    View sbView = snackbar.getView();
+                    TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                    textView.setTextColor(Color.YELLOW);
+
+                    snackbar.show();
+
+
+                }
         }
 
 
@@ -185,15 +280,15 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     }
 
 
-    //Method to refresh content. Called when user swipes up to refresh
+   /* //Method to refresh content. Called when user swipes up to refresh
     private void refreshContent(){
-        swipeRefreshLayout.setRefreshing(true);
+
         // Call the main method. Since firstTimeLaunch is set to false, the adapter will only be
         // cleared and refreshed
         setUpLocationsForMainScreen();
 
         swipeRefreshLayout.setRefreshing(false); //stop the refresh dialog once finished
-    }
+    }*/
 
     // Method used to add a "/" at the end and "https://" at the beginning of a link and to remove spaces
     private String fixLink (String linkToFix){
@@ -284,7 +379,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     editor.putString("api_key_edit", userInput);
                     editor.apply();
 
-                    ((MainActivityRecyclerView)getActivity()).refreshContent();
+                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen();
 
                 }
             });
@@ -366,7 +461,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     editor.putString("root_link_editpref", userInput);
                     editor.apply();
 
-                    ((MainActivityRecyclerView)getActivity()).refreshContent();
+                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen();
 
                 }
             });
@@ -524,7 +619,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 if (firstTimeLaunch) {
                     // Binding the adapter to the RecyclerView
                     adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
-                    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
+                    recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
                     recyclerView.setAdapter(adapter);
                     // Attach layout manager to the RecyclerView
                     recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
@@ -645,9 +740,15 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
                 } else{
 
-                    // Clear the adapter and load up new content to adapter
-                    adapter.clear();
-                    adapter.addAll(recordingStationsForAdapter);
+                    if (isShowingLive) {
+                        adapter.notifyMassDataChange(recordingStationsForAdapter);
+
+
+                    } else{
+                        // Clear the adapter and load up new content to adapter
+                        adapter.clear();
+                        adapter.addAll(recordingStationsForAdapter);
+                    }
 
                 }
 
@@ -658,6 +759,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
     }
 
-
-
+    @Override
+    protected void onPause() {
+        super.onPause();
+        timerHandler.removeCallbacks(timerRunnable);
+    }
 }

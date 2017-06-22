@@ -20,16 +20,24 @@
     <string name="pref_title_display_name">Display name</string>
     <string name="pref_default_display_name">John Smith</string>
 
-    <string name="pref_title_check_change_in_data">Update frequency for Power Readings</string>
+    <string name="pref_title_check_change_in_data">Update frequency for Live Power Readings</string>
     <string-array name="pref_example_list_titles">
+        <item>Every second</item>
+        <item>Every 2 seconds</item>
+        <item>Every 5 seconds</item>
         <item>Every 10 seconds</item>
-        <item>Every 1 minute</item>
-        <item>Never</item>
+        <item>Every 20 seconds</item>
+        <item>Every 30 seconds</item>
+        <item>Every minute</item>
     </string-array>
     <string-array name="pref_example_list_values">
         <item>1</item>
-        <item>0</item>
-        <item>-1</item>
+        <item>2</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+        <item>60</item>
     </string-array>
 
     <string-array name="pref_interval_entries">
@@ -296,6 +304,7 @@
     <string name="pref_title_interval">Fetch Interval</string>
     <string name="pref_summary_interval">The amount of time, in milliseconds, between timestamps that data is polled</string>
     <string name="title_activity_main_recycler_view">MainActivityRecyclerView</string>
+    <string name="title_activity_to_be_deleted">ToBeDeleted</string>
 
 
 </resources>
