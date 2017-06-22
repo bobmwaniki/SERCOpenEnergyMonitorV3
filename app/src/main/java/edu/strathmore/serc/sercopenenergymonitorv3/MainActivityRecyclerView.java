@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,9 +18,11 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -279,16 +282,6 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
-   /* //Method to refresh content. Called when user swipes up to refresh
-    private void refreshContent(){
-
-        // Call the main method. Since firstTimeLaunch is set to false, the adapter will only be
-        // cleared and refreshed
-        setUpLocationsForMainScreen();
-
-        swipeRefreshLayout.setRefreshing(false); //stop the refresh dialog once finished
-    }*/
 
     // Method used to add a "/" at the end and "https://" at the beginning of a link and to remove spaces
     private String fixLink (String linkToFix){
@@ -621,8 +614,25 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
                     recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
                     recyclerView.setAdapter(adapter);
-                    // Attach layout manager to the RecyclerView
-                    recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
+
+                    // Checks if screen size is more than 6.5 inches diagonally (which I consider to be a tablet)
+                    DisplayMetrics metrics = new DisplayMetrics();
+                    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+                    float yInches= metrics.heightPixels/metrics.ydpi;
+                    float xInches= metrics.widthPixels/metrics.xdpi;
+                    double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
+
+                    // Check if the device has a large screen or is in Landscape mode
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
+                            || diagonalInches>=6.5) {
+                        // Use a grid layout when the app is in landscape or devices has a 6.5inch screen or bigger
+                        recyclerView.setLayoutManager(new GridLayoutManager(MainActivityRecyclerView.this, 2));
+                    }
+                    else{
+                        // Use a linear layout when the app is in potrait
+                        recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
+                    }
                     // Set the animation from wasabeef's recycler-animator library
                     recyclerView.setItemAnimator(new SlideInUpAnimator());
 
