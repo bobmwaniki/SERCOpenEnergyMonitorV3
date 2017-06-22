@@ -19,6 +19,7 @@ Special thanks to:
 - [MPAndroidChart](https://github.com/PhilJay/MPAndroidChart)
 - [FancyButtons](https://github.com/medyo/Fancybuttons)
 - [Ahoy! Onboarding](https://github.com/codemybrainsout/ahoy-onboarding)
+- [LongPressPopup](https://github.com/RiccardoMoro/LongPressPopup)
 
 ### Requirements
 
