@@ -91,8 +91,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                      * should not be carried further. That is, return true to indicate that you have
                      * handled the event and it should stop here; return false if you have not handled
                      * it and/or the event should continue to any other on-click listeners.
-                     * If false is returned, OnItemClickListener will be triggered resulting in GraphActivity
-                     * being opened*/
+                     * If false is returned, OnItemClickListener will be triggered resulting in onItemClick
+                     * being triggered*/
                     return true;
                 }
             });
@@ -131,10 +131,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
         // Set TextViews based on the attributes of the RecordingStation
         TextView nameTV = holder.nameTextView;
-        nameTV.setText(recordingStation.getStationName());
         TextView tagTV = holder.tagTextView;
-        tagTV.setText(recordingStation.getStationTag());
         TextView powerReadingTV = holder.powerReadingTextView;
+
+        nameTV.setText(recordingStation.getStationName());
+        tagTV.setText(recordingStation.getStationTag());
         powerReadingTV.setText(String.valueOf(recordingStation.getStationValueReading()) + " W");
 
     }
@@ -150,7 +151,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     /*
-    * The following 2 classes are used to help clear and load new data to the adapter
+    * The following 3 classes are used to help clear and load new data to the adapter
     */
     // Clear all elements of the recycler
     public void clear(){

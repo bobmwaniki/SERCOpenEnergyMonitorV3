@@ -24,8 +24,10 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -472,6 +474,119 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         }
     }
 
+    // Method that gets the JSON String from the emoncms server and transforms it into an ArrayList
+    // of RecordingStation objects
+    public ArrayList<RecordingStation> jsonToRecordingStationList(String jsonText) throws JSONException {
+
+        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
+        ArrayList<RecordingStation> recordingStations = new ArrayList<>();
+
+        // This changes the JSON String into a JSON object. The response for this call consists of
+        // one JSON array with individual objects for each node added to the Emon CMS platform
+        JSONArray parentJSON = new JSONArray(jsonText);
+        JSONObject childJSON;
+
+        // Cycles through all objects within the JSON array
+        for (int i=0; i<parentJSON.length(); i++){
+
+            // Initialising the variables needed for the RecordingStation constructor
+            int id =0;
+            String name="";
+            String tag="";
+            int time=0;
+            int powerReading=0;
+
+            // Setting childJSON as an object in the JSON array at position i
+            childJSON = parentJSON.getJSONObject(i);
+
+            //Checks if ID field exists and is not null
+            if (childJSON.has("id") && !childJSON.isNull("id")){
+                id = childJSON.getInt("id");
+            }
+            //Checks if name field exists and is not null
+            if (childJSON.has("name") && !childJSON.isNull("name")){
+                name = childJSON.getString("name");
+            }
+            //Checks if tag field exists and is not null
+            if (childJSON.has("tag") && !childJSON.isNull("tag")){
+                tag = childJSON.getString("tag");
+            }
+            //Checks if time field exists and is not null
+            if (childJSON.has("time") && !childJSON.isNull("time")){
+                time = childJSON.getInt("time");
+            }
+            //Checks if value field exists and is not null
+            if (childJSON.has("value") && !childJSON.isNull("value")){
+                powerReading = childJSON.getInt("value");
+            }
+
+            //Creating new RecordingStation object with the values and adding it to the ArrayList for each loop
+            RecordingStation recordingStation = new RecordingStation(id, name, tag, time, powerReading);
+            recordingStations.add(recordingStation);
+
+        }
+
+        return recordingStations;
+    }
+
+    public ArrayList<RecordingStation> getRecordingStationsInSettings(ArrayList<RecordingStation> recordingStations){
+
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
+
+
+        /* This function takes in an array list of the recording stations and returns an array list
+         * of recording stations which is a subset of the of the input. This subset contains all the
+         * recording stations contained within the setting preferences
+         */
+        Set<String> recordingStationsInSettings = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
+        Set<String> chosenRecordingStations = new HashSet<>();
+
+
+        // Creates an array list of names of the stations in the form "TAG - NAME"
+        ArrayList<String> recordingStationNames = new ArrayList<>();
+        for (int i=0; i<recordingStations.size(); i++){
+            recordingStationNames.add(recordingStations.get(i).getStationTag() + " - " + recordingStations.get(i).getStationName());
+        }
+
+        // Sort List Alphabetically
+        Collections.sort(recordingStationNames, String.CASE_INSENSITIVE_ORDER);
+
+        // Adds these names to a new String Array List to chosenRecordingStations
+        chosenRecordingStations.addAll(recordingStationNames);
+
+        // Saves the "TAG-NAME" full list as the full list (used later in the Settings Activity
+        SharedPreferences.Editor editor = appSettings.edit();
+        editor.putStringSet("full_station_list", chosenRecordingStations);
+
+        // Adds full list in case selected list is empty e.g. on first launch. Otherwise it would be
+        // a blank screen and the user would have to go to settings and select which locations to appear
+        if (recordingStationsInSettings.isEmpty()) {
+            editor.putStringSet("selected_station_list", chosenRecordingStations);
+            editor.apply();
+        }
+
+        // Logging entries in the list
+        Log.i("SERC Log:", "selected_station_list size: "+ String.valueOf(recordingStationsInSettings.size()));
+        for (int i=0; i<recordingStationsInSettings.size(); i++){
+            Log.i("SERC Log:", "selected_station_list " + String.valueOf(i) + ": "+ String.valueOf(recordingStationsInSettings.toArray()[i]));
+        }
+
+        ArrayList<RecordingStation> recordingStationsForAdapter = new ArrayList<>();
+        for (String nameTag:recordingStationsInSettings){
+            for (int j = 0; j < recordingStations.size(); j++){
+                String currentStn = recordingStations.get(j).getStationTag() + " - " + recordingStations.get(j).getStationName();
+
+                if (nameTag.contains(currentStn)){
+                    recordingStationsForAdapter.add(recordingStations.get(j));
+
+                }
+            }
+        }
+
+        return recordingStationsForAdapter;
+
+    }
+
     // Main method that sets up all the cards in the main screen
     public void setUpLocationsForMainScreen(){
         // Get Root/API key from settings
@@ -494,110 +609,11 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 ArrayList<RecordingStation> recordingStations = new ArrayList<>();
 
                 resultFromEmonCms = output;
+                // Get list of RecordingStation objects from response
+                recordingStations = jsonToRecordingStationList(output);
 
-
-                // This changes the JSON String into a JSON object. The response for this call consists of
-                // one JSON array with individual objects for each node added to the Emon CMS platform
-                JSONArray parentJSON = new JSONArray(resultFromEmonCms);
-                JSONObject childJSON;
-
-                // Cycles through all objects within the JSON array
-                for (int i=0; i<parentJSON.length(); i++){
-
-                    // Initialising the variables needed for the RecordingStation constructor
-                    int id =0;
-                    String name="";
-                    String tag="";
-                    int time=0;
-                    int powerReading=0;
-
-                    // Setting childJSON as an object in the JSON array at position i
-                    childJSON = parentJSON.getJSONObject(i);
-
-                    //Checks if ID field exists and is not null
-                    if (childJSON.has("id") && !childJSON.isNull("id")){
-                        id = childJSON.getInt("id");
-                    }
-                    //Checks if name field exists and is not null
-                    if (childJSON.has("name") && !childJSON.isNull("name")){
-                        name = childJSON.getString("name");
-                    }
-                    //Checks if tag field exists and is not null
-                    if (childJSON.has("tag") && !childJSON.isNull("tag")){
-                        tag = childJSON.getString("tag");
-                    }
-                    //Checks if time field exists and is not null
-                    if (childJSON.has("time") && !childJSON.isNull("time")){
-                        time = childJSON.getInt("time");
-                    }
-                    //Checks if value field exists and is not null
-                    if (childJSON.has("value") && !childJSON.isNull("value")){
-                        powerReading = childJSON.getInt("value");
-                    }
-
-                    //Creating new RecordingStation object with the values and adding it to the ArrayList for each loop
-                    RecordingStation recordingStation = new RecordingStation(id, name, tag, time, powerReading);
-                    recordingStations.add(recordingStation);
-
-                }
-
-                /*
-                     * This function takes in an array list of the recording stations and returns an array list
-                     * of recording stations which is a subset of the of the input. This subset contains all the
-                     * recording stations contained within the setting preferences
-                     */
-
-                Set<String> recordingStationsInSettings = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
-                Set<String> chosenRecordingStations = new HashSet<>();
-
-
-                // Creates an array list of names of the stations in the form "TAG - NAME"
-                Log.i("SERC Log:", "Building List of Recording Station Names");
-                ArrayList<String> recordingStationNames = new ArrayList<>();
-                for (int i=0; i<recordingStations.size(); i++){
-                    recordingStationNames.add(recordingStations.get(i).getStationTag() + " - " + recordingStations.get(i).getStationName());
-                }
-
-                // Sort List Alphabetically
-                Collections.sort(recordingStationNames, String.CASE_INSENSITIVE_ORDER);
-
-                // Adds these names to a new String Array List to chosenRecordingStations
-                Log.i("SERC Log:", "Adding the names to settings");
-                chosenRecordingStations.addAll(recordingStationNames);
-
-                Log.i("SERC Log:", "Saving new settings");
-                SharedPreferences.Editor editor = appSettings.edit();
-                editor.putStringSet("full_station_list", chosenRecordingStations);
-
-                Log.i("SERC Log", "Checking if selected_station_list in SharedPrefs is empty: " + String.valueOf(recordingStations.isEmpty()));
-                if (recordingStationsInSettings.isEmpty()) {
-                    // Adds full list in case selected list is empty e.g. on first launch
-                    editor.putStringSet("selected_station_list", chosenRecordingStations);
-                    editor.apply();
-                }
-
-                // Logging entries in the list
-                Log.i("SERC Log:", "selected_station_list size: "+ String.valueOf(recordingStationsInSettings.size()));
-                for (int i=0; i<recordingStationsInSettings.size(); i++){
-                    Log.i("SERC Log:", "selected_station_list " + String.valueOf(i) + ": "+ String.valueOf(recordingStationsInSettings.toArray()[i]));
-                }
-
-                ArrayList<RecordingStation> recordingStationsForAdapter = new ArrayList<>();
-                for (String nameTag:recordingStationsInSettings){
-                    for (int j = 0; j < recordingStations.size(); j++){
-                        String currentStn = recordingStations.get(j).getStationTag() + " - " + recordingStations.get(j).getStationName();
-                        Log.i("SERC Log", "currentStn: " + currentStn);
-                        Log.i("SERC Log", "nameTag: " + nameTag);
-                        Log.i("SERC Log", "nameTag.contains(currentStn): " + String.valueOf(nameTag.contains(currentStn)));
-
-                        if (nameTag.contains(currentStn)){
-                            recordingStationsForAdapter.add(recordingStations.get(j));
-
-                        }
-                    }
-                }
-
-
+                // Get subset of locations for settings
+                ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations);
                 // Arranges the Stations alphabetically by tag name
                 if (recordingStationsForAdapter.size()>1){
                     Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
@@ -608,34 +624,56 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     });
                 }
 
-                // Checks if the activity is being lauched or if it is a refresh
+                // Checks if the activity is being launched or if it is a refresh
                 if (firstTimeLaunch) {
                     // Binding the adapter to the RecyclerView
                     adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
                     recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
                     recyclerView.setAdapter(adapter);
 
-                    // Checks if screen size is more than 6.5 inches diagonally (which I consider to be a tablet)
-                    DisplayMetrics metrics = new DisplayMetrics();
-                    getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
-                    float yInches= metrics.heightPixels/metrics.ydpi;
-                    float xInches= metrics.widthPixels/metrics.xdpi;
-                    double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
-
                     // Check if the device has a large screen or is in Landscape mode
-                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
-                            || diagonalInches>=6.5) {
-                        // Use a grid layout when the app is in landscape or devices has a 6.5inch screen or bigger
+                    // Use a grid layout when the app is in landscape or devices has a 6.5inch screen or bigger
+                    double screenSize = getScreenSize();
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE || screenSize>=6.5) {
                         recyclerView.setLayoutManager(new GridLayoutManager(MainActivityRecyclerView.this, 2));
                     }
                     else{
-                        // Use a linear layout when the app is in potrait
+                        // Use a linear layout when the app is in portrait
                         recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
                     }
+
                     // Set the animation from wasabeef's recycler-animator library
                     recyclerView.setItemAnimator(new SlideInUpAnimator());
 
+                    setUpClickListeners();
+
+                    // Makes sure this loop does not repeat again while activity has not closed
+                    firstTimeLaunch = false;
+
+
+                } else{
+
+                    if (isShowingLive) {
+                        adapter.notifyMassDataChange(recordingStationsForAdapter);
+
+
+                    } else{
+                        // Clear the adapter and load up new content to adapter
+                        adapter.clear();
+                        adapter.addAll(recordingStationsForAdapter);
+                    }
+
+                }
+
+
+            }
+        }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
+
+
+    }
+
+    // Sets up the click listeners for the RecyclerView adapter
+    public void setUpClickListeners(){
 
 
 
@@ -644,27 +682,27 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                      * this sends an intent to open GraphActivity (while passing some information about the
                      * object to GraphActivity within the intent)
                      */
-                    adapter.setOnItemClickListener(new RecyclerViewAdapter.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(View itemView, int position) {
-                            Intent graphIntent = new Intent(MainActivityRecyclerView.this, GraphTabbed.class);
+        adapter.setOnItemClickListener(new RecyclerViewAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View itemView, int position) {
+                Intent graphIntent = new Intent(MainActivityRecyclerView.this, GraphTabbed.class);
 
-                            // Getting the station ID, name and tag of the Clicked item to be sent with the intent
-                            graphIntent.putExtra("Station_ID", adapter.getRecordingStation(position).getStationID());
-                            graphIntent.putExtra("Station_name", adapter.getRecordingStation(position).getStationName());
-                            graphIntent.putExtra("Station_tag", adapter.getRecordingStation(position).getStationTag());
+                // Getting the station ID, name and tag of the Clicked item to be sent with the intent
+                graphIntent.putExtra("Station_ID", adapter.getRecordingStation(position).getStationID());
+                graphIntent.putExtra("Station_name", adapter.getRecordingStation(position).getStationName());
+                graphIntent.putExtra("Station_tag", adapter.getRecordingStation(position).getStationTag());
 
-                            // Start GraphActivity
-                            startActivity(graphIntent);
-                        }
-                    });
+                // Start GraphActivity
+                startActivity(graphIntent);
+            }
+        });
 
 
 
-                    /**
-                     * This is the listener for when a user long clicks/presses on an item in the listview.
-                     * This opens a Dialog showing all the information stored for the that RecordingStation object
-                     */
+        /**
+         * This is the listener for when a user long clicks/presses on an item in the listview.
+         * This opens a Dialog showing all the information stored for the that RecordingStation object
+         */
 
                     /*adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
                         @Override
@@ -703,75 +741,71 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                         }
                     });*/
 
-                    adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
-                        @Override
-                        public void onItemLongClick(View itemView, final int position) {
+        adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
+            @Override
+            public void onItemLongClick(View itemView, final int position) {
 
-                            final int currentPosition = position;
+                final int currentPosition = position;
 
-                            Date currentTime = new Date(adapter.getRecordingStation(position).getStationTime()*1000);
-                            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy h:mm a");
-                            final String stationTime = sdf.format(currentTime);
+                Date currentTime = new Date(adapter.getRecordingStation(position).getStationTime()*1000);
+                SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy h:mm a");
+                final String stationTime = sdf.format(currentTime);
 
-                            LongPressPopup popup = new LongPressPopupBuilder(MainActivityRecyclerView.this)// A Context object for the builder constructor
-                                    .setTarget(itemView)
-                                    .setPopupView(R.layout.popup_layout, new PopupInflaterListener() {
-                                        @Override
-                                        public void onViewInflated(@Nullable String popupTag, View root) {
-                                            TextView popup_ID = (TextView) root.findViewById(R.id.popup_location_id);
-                                            TextView popup_Tag = (TextView) root.findViewById(R.id.popup_location_tags);
-                                            TextView popup_Name = (TextView) root.findViewById(R.id.popup_location_name);
-                                            TextView popup_reading = (TextView) root.findViewById(R.id.popup_location_reading);
-                                            TextView popup_time = (TextView) root.findViewById(R.id.popup_location_time);
+                LongPressPopup popup = new LongPressPopupBuilder(MainActivityRecyclerView.this)// A Context object for the builder constructor
+                        .setTarget(itemView)
+                        .setPopupView(R.layout.popup_layout, new PopupInflaterListener() {
+                            @Override
+                            public void onViewInflated(@Nullable String popupTag, View root) {
+                                TextView popup_ID = (TextView) root.findViewById(R.id.popup_location_id);
+                                TextView popup_Tag = (TextView) root.findViewById(R.id.popup_location_tags);
+                                TextView popup_Name = (TextView) root.findViewById(R.id.popup_location_name);
+                                TextView popup_reading = (TextView) root.findViewById(R.id.popup_location_reading);
+                                TextView popup_time = (TextView) root.findViewById(R.id.popup_location_time);
 
-                                            popup_ID.setText( String.valueOf(adapter.getRecordingStation(currentPosition).getStationID()));
-                                            popup_Name.setText( adapter.getRecordingStation(currentPosition).getStationName());
-                                            popup_Tag.setText(adapter.getRecordingStation(currentPosition).getStationTag());
-                                            popup_reading.setText(String.valueOf(adapter.getRecordingStation(currentPosition).getStationValueReading())+ "W");
-                                            popup_time.setText(stationTime);
+                                popup_ID.setText( String.valueOf(adapter.getRecordingStation(currentPosition).getStationID()));
+                                popup_Name.setText( adapter.getRecordingStation(currentPosition).getStationName());
+                                popup_Tag.setText(adapter.getRecordingStation(currentPosition).getStationTag());
+                                popup_reading.setText(String.valueOf(adapter.getRecordingStation(currentPosition).getStationValueReading())+ "W");
+                                popup_time.setText(stationTime);
 
-                                        }
-                                    })// The View to show when long pressed
-                                    .setCancelTouchOnDragOutsideView(true)
-                                    .build();// This will give you a LongPressPopup object
+                            }
+                        })// The View to show when long pressed
+                        .setCancelTouchOnDragOutsideView(true)
+                        .build();// This will give you a LongPressPopup object
 
-                            // You can also chain it to the .build() method call above without declaring
-                            // the "popup" variable before
-                            // From this moment, the touch events are registered and, if long pressed,
-                            // will show the given view inside the popup, call unregister() to stop
-                            popup.register();
-                        }
-                    });
-
-
-                    // Makes sure this loop does not repeat again while activity has not closed
-                    firstTimeLaunch = false;
-
-
-                } else{
-
-                    if (isShowingLive) {
-                        adapter.notifyMassDataChange(recordingStationsForAdapter);
-
-
-                    } else{
-                        // Clear the adapter and load up new content to adapter
-                        adapter.clear();
-                        adapter.addAll(recordingStationsForAdapter);
-                    }
-
-                }
-
-
+                // You can also chain it to the .build() method call above without declaring
+                // the "popup" variable before
+                // From this moment, the touch events are registered and, if long pressed,
+                // will show the given view inside the popup, call unregister() to stop
+                popup.register();
             }
-        }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
+        });
+    }
 
+    // Returns the diagonal screen size of the device in inches
+    public double getScreenSize(){
+        // Checks if screen size is more than 6.5 inches diagonally (which I consider to be a tablet)
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        // Calculate screen size
+        float yInches= metrics.heightPixels/metrics.ydpi;
+        float xInches= metrics.widthPixels/metrics.xdpi;
+        double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
 
+        return diagonalInches;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        // To stop live data when Activity pauses
         timerHandler.removeCallbacks(timerRunnable);
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.graph_context_menu, menu);
     }
 }
