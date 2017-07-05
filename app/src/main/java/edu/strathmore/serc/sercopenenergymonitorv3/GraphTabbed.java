@@ -208,6 +208,7 @@ public class GraphTabbed extends AppCompatActivity {
 
     // Method for drawing the graph. Requires the HTTP link to the JSON file
     private void drawGraph(String graphLink){
+        Log.i("SERC Log", "link: " + graphLink);
 
         // Graph Drawn in onPostExecute to avoid out of sync data
         new EmonCmsApiCall(GraphTabbed.this, new EmonCmsApiCall.AsyncResponse() {
@@ -413,13 +414,14 @@ public class GraphTabbed extends AppCompatActivity {
                 }
                 lineChart.invalidate(); //refresh
 
-                // Move tab graph automatically
+                // Move to the graph tab automatically
                 mViewPager.setCurrentItem(1, true);
 
             }
         }).execute(graphLink);
 
     }
+
 
 
     @Override

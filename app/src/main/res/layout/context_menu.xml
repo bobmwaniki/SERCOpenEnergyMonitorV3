@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/colorPrimary">
+
+        <TextView
+            android:id="@+id/context_menu_heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            tools:text="Station Name - Station Tag"
+            />
+
+    </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/context_menu_historical_graph"
+        style="@style/ContextMenuTextView"
+        android:background="?android:attr/selectableItemBackground"
+        android:text="View Historical Graph"
+
+        />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"/>
+
+    <TextView
+        android:id="@+id/context_menu_live_graph"
+        style="@style/ContextMenuTextView"
+        android:background="?android:attr/selectableItemBackground"
+        android:text="View Live Graph"/>
+
+</LinearLayout>

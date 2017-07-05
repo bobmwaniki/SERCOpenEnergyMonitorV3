@@ -35,10 +35,7 @@ public class EmonCmsApiCall extends AsyncTask<String, Void, String> {
         mContext = context;
     }
 
-    public EmonCmsApiCall(Context context) {
-        mContext = context;
 
-    }
 
     @Override
     protected void onPreExecute() {

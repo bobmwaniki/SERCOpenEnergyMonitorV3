@@ -3,11 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_about"
-        android:orderInCategory="10"
-        android:title="About"
-        app:showAsAction="never"/>
-
-
+        android:id="@+id/full_screen_live_graph"
+        android:title="Full Screen"
+        app:showAsAction="always"
+        android:icon="@drawable/expand"/>
 
 </menu>

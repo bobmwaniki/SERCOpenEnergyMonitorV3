@@ -72,6 +72,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="edu.strathmore.serc.sercopenenergymonitorv3.MainActivity" />
         </activity>
+        <activity
+            android:name=".LiveGraphActivity"
+            android:label="@string/title_activity_live_graph"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

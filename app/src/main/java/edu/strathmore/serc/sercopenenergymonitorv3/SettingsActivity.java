@@ -323,6 +323,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference("graph_x_axis_position_listpref"));
             bindPreferenceSummaryToValue(findPreference("graph_x_axis_angle_listpref"));
             bindPreferenceSummaryToValue(findPreference("graph_default_duration_listpref"));
+            bindPreferenceSummaryToValue(findPreference("graph_x_axis_time_date"));
         }
 
 

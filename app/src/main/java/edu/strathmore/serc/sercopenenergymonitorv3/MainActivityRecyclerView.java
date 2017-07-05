@@ -24,10 +24,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -314,6 +312,60 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return mFixedString;
     }
 
+    // Deals with pop-up when item is clicked
+    public static class LocationContextMenu extends DialogFragment{
+
+
+
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            //return super.onCreateDialog(savedInstanceState);
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            LayoutInflater inflater = getActivity().getLayoutInflater();
+
+            View view = inflater.inflate(R.layout.context_menu, null);
+            builder.setView(view);
+
+            TextView heading = (TextView) view.findViewById(R.id.context_menu_heading);
+            TextView historicalGraph = (TextView) view.findViewById(R.id.context_menu_historical_graph);
+            TextView liveGraph = (TextView) view.findViewById(R.id.context_menu_live_graph);
+
+            final Bundle mArgs = getArguments();
+            String title = mArgs.getString("location_title","");
+            heading.setText(title);
+
+
+            historicalGraph.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), GraphTabbed.class );
+                    // Getting the station ID, name and tag of the Clicked item to be sent with the intent
+                    intent.putExtra("Station_ID", mArgs.getInt("location_ID"));
+                    intent.putExtra("Station_name", mArgs.getString("location_name"));
+                    intent.putExtra("Station_tag", mArgs.getString("location_tag"));
+                    LocationContextMenu.this.getDialog().cancel();
+                    startActivity(intent);
+                }
+            });
+
+            liveGraph.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), LiveGraphActivity.class);
+                    intent.putExtra("Station_ID", mArgs.getInt("location_ID"));
+                    intent.putExtra("Station_name", mArgs.getString("location_name"));
+                    intent.putExtra("Station_tag", mArgs.getString("location_tag"));
+                    LocationContextMenu.this.getDialog().cancel();
+                    startActivity(intent);
+                }
+            });
+
+
+            return builder.create();
+        }
+    }
+
     // This Fragment class defines the pop-up that shows up if an API key is not found/or provided by the user
     public static class APIKeyDialog extends DialogFragment {
 
@@ -529,6 +581,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return recordingStations;
     }
 
+    // Gets the subset of Recording Stations in selected in settings from the full list supplied to it
     public ArrayList<RecordingStation> getRecordingStationsInSettings(ArrayList<RecordingStation> recordingStations){
 
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
@@ -676,24 +729,32 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     public void setUpClickListeners(){
 
 
-
-                    /*
-                     * OnItemClickLister for each item in the RecylerView. When an item in the RecylerView is clicked,
-                     * this sends an intent to open GraphActivity (while passing some information about the
-                     * object to GraphActivity within the intent)
-                     */
+        /* OnItemClickLister for each item in the RecylerView. When an item in the RecylerView is clicked,
+         * this sends an intent to open GraphActivity (while passing some information about the
+         * object to GraphActivity within the intent)
+         */
         adapter.setOnItemClickListener(new RecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View itemView, int position) {
-                Intent graphIntent = new Intent(MainActivityRecyclerView.this, GraphTabbed.class);
 
-                // Getting the station ID, name and tag of the Clicked item to be sent with the intent
-                graphIntent.putExtra("Station_ID", adapter.getRecordingStation(position).getStationID());
-                graphIntent.putExtra("Station_name", adapter.getRecordingStation(position).getStationName());
-                graphIntent.putExtra("Station_tag", adapter.getRecordingStation(position).getStationTag());
+                int station_ID = adapter.getRecordingStation(position).getStationID();
+                String station_name = adapter.getRecordingStation(position).getStationName();
+                String station_tag = adapter.getRecordingStation(position).getStationTag();
 
-                // Start GraphActivity
-                startActivity(graphIntent);
+
+
+                // Start Location Context Menu dialog fragment
+                // Used to pass the title to the fragment
+                Bundle args = new Bundle();
+                args.putString("location_title", station_tag + " - " + station_name);
+                args.putInt("location_ID", station_ID);
+                args.putString("location_name", station_name);
+                args.putString("location_tag", station_tag);
+                // New instance of LocationContextMenu
+                LocationContextMenu locationContextMenu = new LocationContextMenu();
+                locationContextMenu.setArguments(args);
+                FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                locationContextMenu.show(ft, "location_context_menu_historical");
             }
         });
 
@@ -802,10 +863,5 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         timerHandler.removeCallbacks(timerRunnable);
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.graph_context_menu, menu);
-    }
+
 }
