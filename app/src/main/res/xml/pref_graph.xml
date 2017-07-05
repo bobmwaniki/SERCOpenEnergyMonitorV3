@@ -84,7 +84,7 @@
         <ListPreference
             android:defaultValue="3"
             android:key="graph_x_axis_time_date"
-            android:title="Date format on X Axis"
+            android:title="@string/pref_graph_x_axis_time_date_title"
             android:entries="@array/pref_graph_x_axis_time_date_entries"
             android:entryValues="@array/pref_graph_x_axis_time_date_values"
             />

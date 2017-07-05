@@ -1,5 +1,9 @@
 package edu.strathmore.serc.sercopenenergymonitorv3;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import com.github.mikephil.charting.charts.BarLineChartBase;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.data.Entry;
@@ -17,9 +21,12 @@ import java.util.Date;
 public class DayAxisValueFormatter implements IValueFormatter, IAxisValueFormatter {
 
     BarLineChartBase<?> chart;
+    private Context mContext;
 
-    public DayAxisValueFormatter(BarLineChartBase<?> chart) {
+    public DayAxisValueFormatter(BarLineChartBase<?> chart, Context context) {
+
         this.chart = chart;
+        mContext = context;
     }
 
     @Override
@@ -30,13 +37,35 @@ public class DayAxisValueFormatter implements IValueFormatter, IAxisValueFormatt
 
     @Override
     public String getFormattedValue(float value, AxisBase axis) {
-        try{
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
+        int userChoice = Integer.valueOf(appSettings.getString("graph_x_axis_time_date", "3")) ;
+
+        return getDateTime(userChoice, value);
+
+        /*try{
             SimpleDateFormat sdf = new SimpleDateFormat("h:mm a \n dd/MM/yyyy");
             Date date = new Date((long) value);
             return sdf.format(date);
         }
         catch(Exception ex){
             return "No time";
+        }*/
+
+    }
+
+    private String getDateTime(int choice, float value){
+        SimpleDateFormat sdf;
+
+        if (choice == 1){
+            sdf = new SimpleDateFormat("dd/MM/yyyy");
+        } else if(choice == 2){
+            sdf = new SimpleDateFormat("h:mm a");
+        } else {
+            sdf = new SimpleDateFormat("h:mm a \n dd/MM/yyyy");
         }
+
+        Date date = new Date((long) value);
+        return sdf.format(date);
+
     }
 }

@@ -396,7 +396,7 @@ public class GraphTabbed extends AppCompatActivity {
                      * DayAxisValueFormatter class. In this instance, the UNIX timestamp is converted to
                      * human readable time in the DayAxisValueFormatter class
                      */
-                    styledXAxis.setValueFormatter(new DayAxisValueFormatter(lineChart));
+                    styledXAxis.setValueFormatter(new DayAxisValueFormatter(lineChart, getBaseContext()));
 
                     // Sets the size and position of the graph's legend
                     Legend legend = lineChart.getLegend();
