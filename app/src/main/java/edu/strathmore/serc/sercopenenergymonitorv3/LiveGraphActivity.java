@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
@@ -22,6 +23,7 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,9 +36,12 @@ public class LiveGraphActivity extends AppCompatActivity {
     private String link = "";
     private String ROOT_LINK = "";
     private String API_KEY = "";
+    private String interval;
+
+    // Time period to fetch data
     private String startTime;
     private String endTime;
-    private String interval;
+    private boolean firstTimeLaunch = true;
 
     private int stationID;
     private String stationTag;
@@ -44,6 +49,21 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     // Graph
     private LineChart lineChart;
+
+    // Repetitive liveData
+    private Handler timerHandler;
+    private int intervalBalance = 500;
+    private int fetchInterval;
+    Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            setLink();
+            drawLiveGraph(link);
+            /*generateStartAndEndTime();
+            setLink();*/
+            timerHandler.postDelayed(timerRunnable, intervalBalance);
+        }
+    } ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,31 +83,90 @@ public class LiveGraphActivity extends AppCompatActivity {
             stationName = extras.getString("Station_name");
         }
 
+        timerHandler = new Handler();
+
         // Get root link, API key and interval from settings
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
         ROOT_LINK = appSettings.getString("root_link_editpref", "");
         API_KEY = appSettings.getString("api_key_edit","");
         interval = appSettings.getString("pref_interval", "900");
 
-        // Start and endTime
-        endTime = getCurrentTimeAsString();
-        startTime = String.valueOf(Long.valueOf(endTime) - 1200000l);
+        // Get the fetch interval from settings
+        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000 - intervalBalance;
+
+
 
         // Get LineChart
         lineChart = (LineChart) findViewById(R.id.full_page_live_graph);
+
+        generateStartAndEndTime();
+        setLink();
+        drawLiveGraph(link);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab) ;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                generateStartAndEndTime();
                 setLink();
-                Log.i("SERC Log", "Link: " + link);
-                drawLiveGraph(link);
+                refreshLiveGraphData();
+
+                //timerHandler.postDelayed(timerRunnable, fetchInterval);
             }
         });
 
 
     }
+
+    /*generateStartAndEndTime();
+            setLink();*/
+    private void refreshLiveGraphData(){
+
+        new CmsApiCall(getBaseContext(), new CmsApiCall.AsyncResponse() {
+            @Override
+            public void processFinish(String output) throws JSONException {
+                JSONArray jsonArray = new JSONArray(output);
+                if (!jsonArray.isNull(0) && jsonArray.length()>0) {
+                    // Get a list of Entry objects from the output
+                    List<Entry> latestEntries = jsonToEntryList(output);
+
+                    // Remove duplicate data in x Axis
+
+                    // Makes sure there is new data
+                    if (latestEntries.size()> 0){
+                        LineData currentLineData = lineChart.getLineData();
+                        ILineDataSet currentLineDataSet = currentLineData.getDataSetByIndex(0);
+
+                        if (currentLineDataSet != null) {
+                            // Add new entries at the end of the list
+                            for (Entry entry:latestEntries){
+                                currentLineDataSet.addEntry(entry);
+                            }
+
+                            // Remove old data that is being replaced
+                            for (int i=0; i<latestEntries.size(); i++){
+                                // remove first point in linedata
+                                currentLineDataSet.removeFirst();
+                            }
+
+                            currentLineData.notifyDataChanged();
+                            lineChart.notifyDataSetChanged();
+                        }
+
+
+                    }
+
+
+
+                }
+
+            }
+        }).execute(link);
+
+        lineChart.invalidate(); //refresh
+
+    }
+
 
     public String getCurrentTimeAsString(){
         // Getting the current time from the system clock in milliseconds
@@ -96,6 +175,21 @@ public class LiveGraphActivity extends AppCompatActivity {
         String currentTime = currentTimeMillis.toString();
 
         return currentTime;
+
+    }
+
+    private void generateStartAndEndTime(){
+        // Start and endTime
+        if (firstTimeLaunch) {
+            endTime = getCurrentTimeAsString();
+            startTime = String.valueOf(Long.valueOf(endTime) - 600000l);
+            firstTimeLaunch = false;
+        }
+        else{
+            startTime = endTime;
+            endTime = getCurrentTimeAsString();
+
+        }
 
     }
 
@@ -143,11 +237,12 @@ public class LiveGraphActivity extends AppCompatActivity {
     // reply form the Emoncms server
     public List<Entry> jsonToEntryList (String jsonString) throws JSONException {
 
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+
         /* For this call, the JSON consists of one large parent JSON Array with multiple children
          * arrays each containing 2 data points. The time at position 0 and the power reading at
          * position 1 in the child arrays.
          */
-        Log.i("SERC Log", "Server response: " + jsonString);
         JSONArray parentJSON = new JSONArray(jsonString);
         JSONArray childJSONArray;
 
@@ -159,27 +254,57 @@ public class LiveGraphActivity extends AppCompatActivity {
         // First make sure the jsonString is not empty
         if (!parentJSON.isNull(0) && parentJSON.length()>0){
             Log.i("SERC Log", "Going through the JSON");
+
+            boolean firstLoop = true;
+            Long reference_timestamp = 0L;
+
             for (int i = 0; i < parentJSON.length(); i++) {
                 // Take position i in the large array, which should contain the timestamp and value
                 childJSONArray = parentJSON.getJSONArray(i);
 
-                for (int j = 0; j < childJSONArray.length(); j++) {
-                    // Check if value/reading is null and adds 0 if so to avoid NullException error
-                    if (childJSONArray.get(1) == null) {
-                        /*yAxis.add(0d);
-                        xAxis.add(childJSONArray.getLong(0));*/
+                /**
+                 * The entry object can only take floats. For the x Axis which has timestamps, the
+                 * precision is lost when it converted from Long to Float (and back to long again in
+                 * DayAxisValueFormatter when converting the UNIX time back to human readable format).
+                 * This leads to instances where the value reading appear on the same timestamp on the graph
+                 * (undesirable). To counter this, since the timestamps are arranged in ascending order
+                 * the first is stored in settings and the differences to this first timestamp (which
+                 * are much smaller compared to the full timestamp, hence no loss in precision) are
+                 * stored in the entries. This is the "reference_timestamp". In DayAxisValueFormatter
+                 * the"reference_timestamp" is added back to these differences to get back the correct
+                 * timestamp.
+                 */
 
-                        entries.add(new Entry(childJSONArray.getLong(0), 0l ));
-                    } else {
-                        // Add the values to the X and Y axis ArrayLists
-                        entries.add(new Entry(childJSONArray.getLong(0), (float) childJSONArray.getDouble(1)));
-                        /*xAxis.add(childJSONArray.getLong(0));
-                        yAxis.add(childJSONArray.getDouble(1));*/
 
-                    }
+
+                // Checks if its the first loop to store the first time stamp as the "reference_timestamp"
+                if (firstLoop) {
+                    String xValue = childJSONArray.getString(0);
+                    reference_timestamp = Long.valueOf(xValue);
+
+                    // Save settings
+                    SharedPreferences.Editor editor = appSettings.edit();
+                    editor.putLong("reference_timestamp", reference_timestamp);
+                    editor.apply();
+
+                    entries.add(new Entry(0 , Float.parseFloat(childJSONArray.getString(1)) ));
+
+                    firstLoop = false;
+
+                } else {
+                    // Add the values to the X and Y axis ArrayLists
+                    String xValue = childJSONArray.getString(0);
+                    xValue = String.valueOf (Long.valueOf(xValue) - reference_timestamp);
+
+
+                    entries.add(new Entry(Float.parseFloat(xValue) , Float.parseFloat(childJSONArray.getString(1)) ));
+
+
                 }
+
             }
         }
+
 
         return entries;
     }
@@ -230,30 +355,52 @@ public class LiveGraphActivity extends AppCompatActivity {
         switch (graphColor){
             case 1:
                 dataSet.setColor(Color.RED);
+                dataSet.setCircleColor(Color.RED);
                 break;
             case 2:
                 dataSet.setColor(Color.CYAN);
+                dataSet.setCircleColor(Color.CYAN);
                 break;
             case 3:
                 dataSet.setColor(Color.BLACK);
+                dataSet.setCircleColor(Color.BLACK);
                 break;
             case 4:
                 dataSet.setColor(Color.BLUE);
+                dataSet.setCircleColor(Color.BLUE);
                 break;
             case 5:
                 dataSet.setColor(Color.GREEN);
+                dataSet.setCircleColor(Color.GREEN);
                 break;
             case 6:
                 dataSet.setColor(Color.MAGENTA);
+                dataSet.setCircleColor(Color.MAGENTA);
                 break;
             case 7:
                 dataSet.setColor(Color.YELLOW);
+                dataSet.setCircleColor(Color.YELLOW);
                 break;
 
         }
 
-        // Removes circles at every data point
-        dataSet.setDrawCircles(false);
+        // Circles at every data point
+        dataSet.setDrawCircles(true);
+        dataSet.setDrawCircleHole(true);
+        dataSet.setCircleRadius(1.6f);
+        dataSet.setCircleHoleRadius(1.2f);
+
+        // Make line smoother
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        // Shade underneath the graph
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(Color.parseColor("#d3a303"));
+        // Removes the values from the graph
+        dataSet.setDrawValues(false);
+
+
+
+
 
         /**
          * This sets the styling of the x axis according to how it has been defined in the
@@ -289,7 +436,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch (id){
-            case (R.id.full_screen_live_graph):
+            case R.id.full_screen_live_graph:
 
                 if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     hideSystemUI();
@@ -297,7 +444,13 @@ public class LiveGraphActivity extends AppCompatActivity {
                 } else{
                     getSupportActionBar().hide();
                 }
+
+            case R.id.action_reset_zoom_live_graph:
+                lineChart.fitScreen();
+                return true;
         }
+
+
 
 
 
@@ -338,5 +491,12 @@ public class LiveGraphActivity extends AppCompatActivity {
         link = ROOT_LINK + "feed/data.json?id=" + String.valueOf(stationID) + "&start=" + startTime + "&end=" + endTime
                 + "&interval=" + interval + "&skipmissing=1&limitinterval=1&apikey=" + API_KEY;
 
+    }
+
+    // Stop runnable once activity pauses
+    @Override
+    protected void onPause() {
+        timerHandler.removeCallbacks(timerRunnable);
+        super.onPause();
     }
 }

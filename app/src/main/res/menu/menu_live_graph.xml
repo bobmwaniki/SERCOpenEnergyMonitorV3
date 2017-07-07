@@ -5,7 +5,14 @@
     <item
         android:id="@+id/full_screen_live_graph"
         android:title="Full Screen"
-        app:showAsAction="always"
-        android:icon="@drawable/expand"/>
+        app:showAsAction="collapseActionView"
+        />
+
+
+    <item
+        android:id="@+id/action_reset_zoom_live_graph"
+        android:orderInCategory="200"
+        android:title="@string/action_reset_zoom"
+        app:showAsAction="never" />
 
 </menu>
