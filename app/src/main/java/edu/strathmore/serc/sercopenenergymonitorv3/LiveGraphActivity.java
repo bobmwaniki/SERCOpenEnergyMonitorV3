@@ -31,6 +31,8 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
 
+import mehdi.sakout.fancybuttons.FancyButton;
+
 public class LiveGraphActivity extends AppCompatActivity {
 
     private String link = "";
@@ -49,6 +51,7 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     // Graph
     private LineChart lineChart;
+    private Long timeBack = 600000L;
 
     // Repetitive liveData
     private Handler timerHandler;
@@ -116,10 +119,68 @@ public class LiveGraphActivity extends AppCompatActivity {
         });
 
 
+        // OnClickListeners for the buttons on top of the graph
+        FancyButton oneHourBack = (FancyButton) findViewById(R.id.live_graph_1_hour_back);
+        FancyButton thirtyMinBack = (FancyButton) findViewById(R.id.live_graph_30_min_back);
+        FancyButton fifteenMinBack = (FancyButton) findViewById(R.id.live_graph_15_min_back);
+        FancyButton tenMinBack = (FancyButton) findViewById(R.id.live_graph_10_min_back);
+        FancyButton oneMinBack = (FancyButton) findViewById(R.id.live_graph_1_min_back);
+
+        oneHourBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redrawGraphForUserTimeBack(60);
+            }
+        });
+
+        thirtyMinBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               redrawGraphForUserTimeBack(30);
+            }
+        });
+
+        fifteenMinBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redrawGraphForUserTimeBack(15);
+            }
+        });
+
+        tenMinBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redrawGraphForUserTimeBack(10);
+            }
+        });
+
+        oneMinBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redrawGraphForUserTimeBack(1);
+            }
+        });
+
+
+
+
+
     }
 
-    /*generateStartAndEndTime();
-            setLink();*/
+    private Long minutesToMilliseconds(int minutes){
+        return (minutes * 60000L);
+    }
+
+    private void redrawGraphForUserTimeBack(int minutes){
+        // Set Time Back
+        timeBack = minutesToMilliseconds(minutes);
+        endTime = getCurrentTimeAsString();
+        startTime = String.valueOf(Long.valueOf(endTime) - timeBack);
+        // Redraw Graph
+        setLink();
+        drawLiveGraph(link);
+    }
+
     private void refreshLiveGraphData(){
 
         new CmsApiCall(getBaseContext(), new CmsApiCall.AsyncResponse() {
@@ -129,8 +190,6 @@ public class LiveGraphActivity extends AppCompatActivity {
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
                     // Get a list of Entry objects from the output
                     List<Entry> latestEntries = jsonToEntryList(output);
-
-                    // Remove duplicate data in x Axis
 
                     // Makes sure there is new data
                     if (latestEntries.size()> 0){
@@ -182,7 +241,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Start and endTime
         if (firstTimeLaunch) {
             endTime = getCurrentTimeAsString();
-            startTime = String.valueOf(Long.valueOf(endTime) - 600000l);
+            startTime = String.valueOf(Long.valueOf(endTime) - timeBack);
             firstTimeLaunch = false;
         }
         else{
@@ -194,10 +253,10 @@ public class LiveGraphActivity extends AppCompatActivity {
     }
 
     public void drawLiveGraph(final String liveGraphLink){
-        new CmsApiCall(getBaseContext(), new CmsApiCall.AsyncResponse() {
+
+        new EmonCmsApiCall(this, new EmonCmsApiCall.AsyncResponse() {
             @Override
             public void processFinish(String output) throws JSONException {
-
                 JSONArray jsonArray = new JSONArray(output);
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
                     // Get a list of Entry objects from the output
@@ -225,7 +284,6 @@ public class LiveGraphActivity extends AppCompatActivity {
                 else{
                     Toast.makeText(getBaseContext(), "No data in server", Toast.LENGTH_LONG).show();
                 }
-
 
             }
         }).execute(liveGraphLink);
@@ -397,6 +455,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         dataSet.setFillColor(Color.parseColor("#d3a303"));
         // Removes the values from the graph
         dataSet.setDrawValues(false);
+
 
 
 
