@@ -136,8 +136,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         TextView tagTV = holder.tagTextView;
         TextView powerReadingTV = holder.powerReadingTextView;
 
-        SharedPreferences appSetttings = PreferenceManager.getDefaultSharedPreferences(mContext);
-        boolean switchNameTag = appSetttings.getBoolean("pref_general_switch_name_tag", false);
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
+        boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
 
         if (switchNameTag) {
             tagTV.setText(recordingStation.getStationName());

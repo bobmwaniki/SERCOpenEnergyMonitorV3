@@ -632,6 +632,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         // Saves the "TAG-NAME" full list as the full list (used later in the Settings Activity
         SharedPreferences.Editor editor = appSettings.edit();
         editor.putStringSet("full_station_list", chosenRecordingStations);
+        editor.apply();
 
         // Adds full list in case selected list is empty e.g. on first launch. Otherwise it would be
         // a blank screen and the user would have to go to settings and select which locations to appear
@@ -690,11 +691,26 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 // Get subset of locations for settings
                 ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations);
                 // Arranges the Stations alphabetically by tag name
+                SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                final boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
                 if (recordingStationsForAdapter.size()>1){
                     Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
                         @Override
                         public int compare(RecordingStation o1, RecordingStation o2) {
-                            return o1.getStationTag().compareTo(o2.getStationTag());
+                            int comp;
+                            // If Preference is switched on, arrange by name first
+                            if (switchNameTag) {
+                                comp = o1.getStationName().compareTo(o2.getStationName());
+                                if (comp==0) {
+                                    comp = o1.getStationTag().compareTo(o2.getStationTag());
+                                }
+                            } else {
+                                comp = o1.getStationTag().compareTo(o2.getStationTag());
+                                if (comp==0) {
+                                    comp = o1.getStationName().compareTo(o2.getStationName());
+                                }
+                            }
+                            return comp;
                         }
                     });
                 }
@@ -891,13 +907,6 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         super.onPause();
         stopRepeatingAction();
     }
-
-    // Start runnable once activity stops
-   /* @Override
-    protected void onResume() {
-        super.onResume();
-        startRepeatingAction();
-    }*/
 
 
 }

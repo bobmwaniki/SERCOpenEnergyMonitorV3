@@ -224,6 +224,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             recordingStationsSet = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
             recordingStationsFullSet = appSettings.getStringSet("full_station_list", Collections.<String>emptySet());
 
+
+
             // Ensuring both sets are of the same size
             if (recordingStationsSet.size() < recordingStationsFullSet.size()) {
                 int j = 1;
