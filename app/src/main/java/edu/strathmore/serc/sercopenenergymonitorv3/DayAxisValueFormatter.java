@@ -22,7 +22,7 @@ public class DayAxisValueFormatter implements IValueFormatter, IAxisValueFormatt
 
     BarLineChartBase<?> chart;
     private Context mContext;
-    //private SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
+
 
     public DayAxisValueFormatter(BarLineChartBase<?> chart, Context context) {
 
@@ -50,9 +50,12 @@ public class DayAxisValueFormatter implements IValueFormatter, IAxisValueFormatt
 
     private String getDateTime(int choice, float value){
 
+//        Log.i("SERC Log", "");
+
 
         SimpleDateFormat sdf;
         Long longValue = (long) value;
+
 
 
         if (choice == 1){
@@ -67,7 +70,8 @@ public class DayAxisValueFormatter implements IValueFormatter, IAxisValueFormatt
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
         Long reference_timestamp = appSettings.getLong("reference_timestamp", 0L);
 
-        Date date = new Date (longValue+ reference_timestamp);
+
+        Date date = new Date (longValue + reference_timestamp);
         return sdf.format(date);
     }
 }

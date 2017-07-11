@@ -1,5 +1,6 @@
 package edu.strathmore.serc.sercopenenergymonitorv3;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -7,7 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -52,21 +52,25 @@ public class LiveGraphActivity extends AppCompatActivity {
     // Graph
     private LineChart lineChart;
     private Long timeBack = 600000L;
+    private int leftOffset = 0;
 
     // Repetitive liveData
-    private Handler timerHandler;
-    private int intervalBalance = 500;
-    private int fetchInterval;
-    Runnable timerRunnable = new Runnable() {
+    private int fetchInterval = 5000;
+    private Handler mHandler;
+    Runnable mStatusChecker = new Runnable() {
         @Override
         public void run() {
-            setLink();
-            drawLiveGraph(link);
-            /*generateStartAndEndTime();
-            setLink();*/
-            timerHandler.postDelayed(timerRunnable, intervalBalance);
+            try {
+                generateStartAndEndTime();
+                setLink();
+                refreshLiveGraphData(); //this function can change value of mInterval.
+            } finally {
+                // 100% guarantee that this always happens, even if
+                // your update method throws an exception
+                mHandler.postDelayed(mStatusChecker, fetchInterval);
+            }
         }
-    } ;
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +90,7 @@ public class LiveGraphActivity extends AppCompatActivity {
             stationName = extras.getString("Station_name");
         }
 
-        timerHandler = new Handler();
+
 
         // Get root link, API key and interval from settings
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
@@ -95,8 +99,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         interval = appSettings.getString("pref_interval", "900");
 
         // Get the fetch interval from settings
-        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000 - intervalBalance;
-
+        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000;
 
 
         // Get LineChart
@@ -106,17 +109,23 @@ public class LiveGraphActivity extends AppCompatActivity {
         setLink();
         drawLiveGraph(link);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab) ;
+        mHandler = new Handler();
+        startRepeatingTask();
+
+       /* FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab) ;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                generateStartAndEndTime();
+                *//*generateStartAndEndTime();
                 setLink();
-                refreshLiveGraphData();
+                refreshLiveGraphData();*//*
 
                 //timerHandler.postDelayed(timerRunnable, fetchInterval);
+
+                mHandler = new Handler();
+                startRepeatingTask();
             }
-        });
+        });*/
 
 
         // OnClickListeners for the buttons on top of the graph
@@ -167,6 +176,18 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
+
+
+    void startRepeatingTask() {
+        mStatusChecker.run();
+    }
+
+    void stopRepeatingTask() {
+        mHandler.removeCallbacks(mStatusChecker);
+    }
+
+
+
     private Long minutesToMilliseconds(int minutes){
         return (minutes * 60000L);
     }
@@ -189,28 +210,45 @@ public class LiveGraphActivity extends AppCompatActivity {
                 JSONArray jsonArray = new JSONArray(output);
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
                     // Get a list of Entry objects from the output
-                    List<Entry> latestEntries = jsonToEntryList(output);
+                    List<Entry> latestEntries = jsonToEntryList(output, true);
 
                     // Makes sure there is new data
                     if (latestEntries.size()> 0){
+
+
+                        Log.i("SERC Log", String.valueOf(latestEntries.size()) + " entries to add");
+
                         LineData currentLineData = lineChart.getLineData();
                         ILineDataSet currentLineDataSet = currentLineData.getDataSetByIndex(0);
+                        //List<ILineDataSet> lineDataSets = currentLineData.getDataSets();
 
-                        if (currentLineDataSet != null) {
-                            // Add new entries at the end of the list
-                            for (Entry entry:latestEntries){
-                                currentLineDataSet.addEntry(entry);
-                            }
-
-                            // Remove old data that is being replaced
-                            for (int i=0; i<latestEntries.size(); i++){
-                                // remove first point in linedata
-                                currentLineDataSet.removeFirst();
-                            }
-
-                            currentLineData.notifyDataChanged();
-                            lineChart.notifyDataSetChanged();
+                        for (int k=0; k<currentLineDataSet.getEntryCount();k++){
+                            Log.i("SERC Log", "Current Entries: " + currentLineDataSet.getEntryForIndex(k).toString());
                         }
+
+                        for(int j=0; j<latestEntries.size(); j++){
+                            currentLineDataSet.addEntry(latestEntries.get(j));
+                            Log.i("SERC Log", "New entry added: " + latestEntries.get(j).toString());
+                        }
+                        currentLineData.notifyDataChanged();
+
+                        for(int j=0; j<latestEntries.size(); j++){
+                            currentLineDataSet.removeFirst();
+
+                        }
+
+                        /*// Left offset
+                        leftOffset = leftOffset + latestEntries.size();
+
+                        Log.i("SERC Log", "Left Offset: " + leftOffset);
+
+
+                        Log.i("SERC Log", "Move to Entry: " + currentLineDataSet.getEntryForIndex(leftOffset).getX());
+                        */
+                        currentLineData.notifyDataChanged();
+                        lineChart.notifyDataSetChanged();
+                        lineChart.moveViewToX(currentLineDataSet.getEntryForIndex(0).getX());
+
 
 
                     }
@@ -222,7 +260,7 @@ public class LiveGraphActivity extends AppCompatActivity {
             }
         }).execute(link);
 
-        lineChart.invalidate(); //refresh
+//        lineChart.invalidate(); //refresh
 
     }
 
@@ -231,7 +269,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Getting the current time from the system clock in milliseconds
         Long currentTimeMillis = System.currentTimeMillis();
         // Setting the current time as now and the start time as one week from that date
-        String currentTime = currentTimeMillis.toString();
+        String currentTime = String.valueOf(currentTimeMillis);
 
         return currentTime;
 
@@ -260,7 +298,7 @@ public class LiveGraphActivity extends AppCompatActivity {
                 JSONArray jsonArray = new JSONArray(output);
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
                     // Get a list of Entry objects from the output
-                    List<Entry> entries = jsonToEntryList(output);
+                    List<Entry> entries = jsonToEntryList(output, false);
 
                     // The following steps are done to prepare for the new data on the graph
                     lineChart.clear();
@@ -280,6 +318,7 @@ public class LiveGraphActivity extends AppCompatActivity {
                     // Sets the LineData object to the LineChart object lineChart that is part of the view
                     lineChart.setData(lineData);
                     lineChart.notifyDataSetChanged();
+                    lineChart.animateX(1000);
                 }
                 else{
                     Toast.makeText(getBaseContext(), "No data in server", Toast.LENGTH_LONG).show();
@@ -293,7 +332,7 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     // Creates a list of Entry objects to be used by the LineChart from a String contain the JSON
     // reply form the Emoncms server
-    public List<Entry> jsonToEntryList (String jsonString) throws JSONException {
+    public List<Entry> jsonToEntryList (String jsonString, boolean isRefreshData) throws JSONException {
 
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
@@ -311,52 +350,77 @@ public class LiveGraphActivity extends AppCompatActivity {
 
         // First make sure the jsonString is not empty
         if (!parentJSON.isNull(0) && parentJSON.length()>0){
-            Log.i("SERC Log", "Going through the JSON");
+
+            /**
+             * The entry object can only take floats. For the x Axis which has timestamps, the
+             * precision is lost when it converted from Long to Float (and back to long again in
+             * DayAxisValueFormatter when converting the UNIX time back to human readable format).
+             * This leads to instances where the value reading appear on the same timestamp on the graph
+             * (undesirable). To counter this, since the timestamps are arranged in ascending order
+             * the first is stored in settings and the differences to this first timestamp (which
+             * are much smaller compared to the full timestamp, hence no loss in precision) are
+             * stored in the entries. This is the "reference_timestamp". In DayAxisValueFormatter
+             * the"reference_timestamp" is added back to these differences to get back the correct
+             * timestamp.
+             */
+
+
 
             boolean firstLoop = true;
             Long reference_timestamp = 0L;
 
-            for (int i = 0; i < parentJSON.length(); i++) {
-                // Take position i in the large array, which should contain the timestamp and value
-                childJSONArray = parentJSON.getJSONArray(i);
 
-                /**
-                 * The entry object can only take floats. For the x Axis which has timestamps, the
-                 * precision is lost when it converted from Long to Float (and back to long again in
-                 * DayAxisValueFormatter when converting the UNIX time back to human readable format).
-                 * This leads to instances where the value reading appear on the same timestamp on the graph
-                 * (undesirable). To counter this, since the timestamps are arranged in ascending order
-                 * the first is stored in settings and the differences to this first timestamp (which
-                 * are much smaller compared to the full timestamp, hence no loss in precision) are
-                 * stored in the entries. This is the "reference_timestamp". In DayAxisValueFormatter
-                 * the"reference_timestamp" is added back to these differences to get back the correct
-                 * timestamp.
-                 */
+            /**
+             * This checks if the data is for refreshing the graph. If so, then there is already an
+             * existing reference timestamp and creating a new one would mean that the refresh data
+             * would appear at the start of the graph rather than the end.
+             */
+            if(isRefreshData){
 
+                reference_timestamp = appSettings.getLong("reference_timestamp",0L);
 
+                for (int i = 0; i < parentJSON.length(); i++) {
+                    childJSONArray = parentJSON.getJSONArray(i);
 
-                // Checks if its the first loop to store the first time stamp as the "reference_timestamp"
-                if (firstLoop) {
-                    String xValue = childJSONArray.getString(0);
-                    reference_timestamp = Long.valueOf(xValue);
-
-                    // Save settings
-                    SharedPreferences.Editor editor = appSettings.edit();
-                    editor.putLong("reference_timestamp", reference_timestamp);
-                    editor.apply();
-
-                    entries.add(new Entry(0 , Float.parseFloat(childJSONArray.getString(1)) ));
-
-                    firstLoop = false;
-
-                } else {
-                    // Add the values to the X and Y axis ArrayLists
                     String xValue = childJSONArray.getString(0);
                     xValue = String.valueOf (Long.valueOf(xValue) - reference_timestamp);
 
-
                     entries.add(new Entry(Float.parseFloat(xValue) , Float.parseFloat(childJSONArray.getString(1)) ));
+                }
 
+
+            }
+            else{
+
+                for (int i = 0; i < parentJSON.length(); i++) {
+                    // Take position i in the large array, which should contain the timestamp and value
+                    childJSONArray = parentJSON.getJSONArray(i);
+
+
+                    // Checks if its the first loop to store the first time stamp as the "reference_timestamp"
+                    if (firstLoop) {
+                        String xValue = childJSONArray.getString(0);
+                        reference_timestamp = Long.valueOf(xValue);
+
+                        // Save settings
+                        SharedPreferences.Editor editor = appSettings.edit();
+                        editor.putLong("reference_timestamp", reference_timestamp);
+                        editor.apply();
+
+                        entries.add(new Entry(0 , Float.parseFloat(childJSONArray.getString(1)) ));
+
+                        firstLoop = false;
+
+                    } else {
+                        // Add the values to the X and Y axis ArrayLists
+                        String xValue = childJSONArray.getString(0);
+                        xValue = String.valueOf (Long.valueOf(xValue) - reference_timestamp);
+
+
+                        entries.add(new Entry(Float.parseFloat(xValue) , Float.parseFloat(childJSONArray.getString(1)) ));
+
+
+                    }
 
                 }
 
@@ -401,12 +465,19 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Sets the rotation angle of the x axis labels
         String xAxisAngle = appSettings.getString("graph_x_axis_angle_listpref", "45");
         styledXAxis.setLabelRotationAngle(Float.valueOf(xAxisAngle));
+        //styledXAxis.setLabelCount(5, true);
 
         // Removing right Y Axis labels
         YAxis rightYAxis = lineChart.getAxisRight();
         // Get from settings
         boolean allowRightYAxisLabel = appSettings.getBoolean("graph_y_axis_both_sides", false);
         rightYAxis.setDrawLabels(allowRightYAxisLabel);
+
+        // Check if Y Axis should start from zero
+        boolean startFromZero = appSettings.getBoolean("pref_live_graph_y_axis_start_from_zero", false);
+        if (startFromZero) {
+            lineChart.getAxisLeft().setAxisMinimum(0f);
+        }
 
         // Getting the color of the line and setting it
         int graphColor = Integer.valueOf(appSettings.getString("graph_line_color_listpref", "1"));
@@ -443,21 +514,23 @@ public class LiveGraphActivity extends AppCompatActivity {
         }
 
         // Circles at every data point
-        dataSet.setDrawCircles(true);
+        boolean showCircles = appSettings.getBoolean("pref_live_graph_show_circles", false);
+        dataSet.setDrawCircles(showCircles);
         dataSet.setDrawCircleHole(true);
         dataSet.setCircleRadius(1.6f);
         dataSet.setCircleHoleRadius(1.2f);
 
         // Make line smoother
-        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        boolean showSmoothline = appSettings.getBoolean("pref_live_graph_smooth_line",true);
+        if (showSmoothline) {
+            dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        }
         // Shade underneath the graph
         dataSet.setDrawFilled(true);
         dataSet.setFillColor(Color.parseColor("#d3a303"));
         // Removes the values from the graph
-        dataSet.setDrawValues(false);
-
-
-
+        boolean showDataPoints = appSettings.getBoolean("pref_live_graph_show_data_values", false);
+        dataSet.setDrawValues(showDataPoints);
 
 
 
@@ -503,9 +576,15 @@ public class LiveGraphActivity extends AppCompatActivity {
                 } else{
                     getSupportActionBar().hide();
                 }
+                return true;
 
             case R.id.action_reset_zoom_live_graph:
                 lineChart.fitScreen();
+                return true;
+
+            case R.id.action_settings:
+                Intent openSettings = new Intent(LiveGraphActivity.this, SettingsActivity.class);
+                startActivity(openSettings);
                 return true;
         }
 
@@ -552,10 +631,22 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
-    // Stop runnable once activity pauses
+    // Stop runnable once activity stops
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopRepeatingTask();
+    }
+
     @Override
     protected void onPause() {
-        timerHandler.removeCallbacks(timerRunnable);
         super.onPause();
+        stopRepeatingTask();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startRepeatingTask();
     }
 }

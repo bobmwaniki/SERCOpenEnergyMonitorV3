@@ -96,6 +96,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_recycler_view);
 
+
         // For the Snackbar called in the menu
         coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout_main);
 

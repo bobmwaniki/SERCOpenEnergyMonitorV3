@@ -250,20 +250,36 @@ public class GraphTabbed extends AppCompatActivity {
 
                 if(!parentJSON.isNull(0)) {
                     Log.i("SERC Log", "Not null array: Response from API Call not null");
+                    boolean firstLoop = true;
+                    Long reference_timestamp = 0L;
+
+
                     for (int i = 0; i < parentJSON.length(); i++) {
                         childJSONArray = parentJSON.getJSONArray(i);
 
-                        for (int j = 0; j < childJSONArray.length(); j++) {
-                            // Check if value is null and adds 0 if so to avoid NullException error
-                            if (childJSONArray.get(1) == null) {
-                                yAxis.add(0d);
+                        // Checks if its the first loop to store the first time stamp as the "reference_timestamp"
+                        if (firstLoop) {
+                            String xValue = childJSONArray.getString(0);
+                            reference_timestamp = Long.valueOf(xValue);
 
-                            } else {
+                            // Save settings
+                            SharedPreferences.Editor editor = appSettings.edit();
+                            editor.putLong("reference_timestamp", reference_timestamp);
+                            editor.apply();
 
-                                xAxis.add(childJSONArray.getLong(0));
-                                yAxis.add(childJSONArray.getDouble(1));
+                            entries.add(new Entry(0 , Float.parseFloat(childJSONArray.getString(1)) ));
 
-                            }
+                            firstLoop = false;
+
+                        } else {
+                            // Add the values to the X and Y axis ArrayLists
+                            String xValue = childJSONArray.getString(0);
+                            xValue = String.valueOf (Long.valueOf(xValue) - reference_timestamp);
+
+
+                            entries.add(new Entry(Float.parseFloat(xValue) , Float.parseFloat(childJSONArray.getString(1)) ));
+
+
                         }
                     }
 
@@ -407,6 +423,8 @@ public class GraphTabbed extends AppCompatActivity {
                     // Helps to clear the extra whitespace in the graph
                     lineChart.getDescription().setText("");
 
+
+
                     // Sets the LineData object to the LineChart object lineChart that is part of the view
                     lineChart.setData(lineData);
                     lineChart.notifyDataSetChanged();
@@ -416,6 +434,9 @@ public class GraphTabbed extends AppCompatActivity {
 
                 // Move to the graph tab automatically
                 mViewPager.setCurrentItem(1, true);
+
+                // Animate Y axis
+                lineChart.animateY(1000);
 
             }
         }).execute(graphLink);

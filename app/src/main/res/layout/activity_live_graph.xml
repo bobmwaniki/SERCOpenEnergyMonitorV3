@@ -38,7 +38,7 @@
             <mehdi.sakout.fancybuttons.FancyButton
                 android:id="@+id/live_graph_1_hour_back"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 fancy:fb_borderColor="#FFFFFF"
@@ -51,7 +51,7 @@
             <mehdi.sakout.fancybuttons.FancyButton
                 android:id="@+id/live_graph_30_min_back"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 fancy:fb_borderColor="#FFFFFF"
@@ -64,7 +64,7 @@
             <mehdi.sakout.fancybuttons.FancyButton
                 android:id="@+id/live_graph_15_min_back"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 fancy:fb_borderColor="#FFFFFF"
@@ -72,12 +72,12 @@
                 fancy:fb_defaultColor="@color/colorPrimary"
                 fancy:fb_focusColor="#9bd823"
                 fancy:fb_radius="10dp"
-                fancy:fb_text="15min"/>
+                fancy:fb_text="15 min"/>
 
             <mehdi.sakout.fancybuttons.FancyButton
                 android:id="@+id/live_graph_10_min_back"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 fancy:fb_borderColor="#FFFFFF"
@@ -90,7 +90,7 @@
             <mehdi.sakout.fancybuttons.FancyButton
                 android:id="@+id/live_graph_1_min_back"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_margin="8dp"
                 fancy:fb_borderColor="#FFFFFF"
@@ -113,13 +113,13 @@
     </LinearLayout>
 
 
-    <android.support.design.widget.FloatingActionButton
+    <!--<android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
+        app:srcCompat="@android:drawable/ic_dialog_email" />-->
 
 
 

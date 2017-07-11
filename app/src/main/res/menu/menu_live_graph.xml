@@ -3,9 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="10"
+        android:title="Settings"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/full_screen_live_graph"
         android:title="Full Screen"
         app:showAsAction="collapseActionView"
+        android:orderInCategory="100"
         />
 
 

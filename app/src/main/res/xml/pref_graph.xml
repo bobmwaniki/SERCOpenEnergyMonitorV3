@@ -108,7 +108,36 @@
 
     </PreferenceCategory>
 
+<PreferenceCategory
+    android:title="Live Graph Settings"
+    android:key="pref_live_graph_category">
 
+    <SwitchPreference
+        android:key="pref_live_graph_show_circles"
+        android:title="Show circles on data points"
+        android:defaultValue="false"
+        />
+
+    <SwitchPreference
+        android:key="pref_live_graph_show_data_values"
+        android:title="Show Data Point values on graph"
+        android:defaultValue="false"
+        />
+
+    <SwitchPreference
+        android:key="pref_live_graph_smooth_line"
+        android:title="Show smooth line"
+        android:summary="@string/pref_live_graph_smooth_line_summary"
+        android:defaultValue="false"
+        />
+
+    <SwitchPreference
+        android:key="pref_live_graph_y_axis_start_from_zero"
+        android:title="Always start Y axis from Zero"
+        android:defaultValue="false"
+        />
+
+</PreferenceCategory>
 
 
 

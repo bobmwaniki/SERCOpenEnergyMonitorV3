@@ -277,7 +277,6 @@
         The graph is drawn using <a href="https://github.com/PhilJay/MPAndroidChart">MPAndroidChart</a>
         \n
         \n
-        Fullscreen icon made by <a href="http://www.flaticon.com/authors/epiccoders">EpicCoders</a> from <a href="http://www.flaticon.comt">www.flaticon.com</a>
 
     </string>
 
@@ -321,10 +320,10 @@
     <string name="pref_title_interval">Fetch Interval</string>
     <string name="pref_summary_interval">The amount of time, in milliseconds, between timestamps that data is polled</string>
     <string name="title_activity_main_recycler_view">MainActivityRecyclerView</string>
-    <string name="title_activity_to_be_deleted">ToBeDeleted</string>
-    <string name="title_activity_live_graph">LiveGraphActivity</string>
-    <string name="title_activity_test">TestActivity</string>
+    <string name="title_activity_live_graph">Live Graph</string>
     <string name="pref_graph_x_axis_time_date_title">Date format on X Axis</string>
+    <string name="pref_live_graph_smooth_line_summary">If turned on, the line that passes through
+        all the data points will be smooth rather that a straight line cnnnecting each point</string>
 
 
 </resources>
