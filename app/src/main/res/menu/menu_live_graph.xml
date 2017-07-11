@@ -8,12 +8,12 @@
         android:title="Settings"
         app:showAsAction="never" />
 
-    <item
+    <!--<item
         android:id="@+id/full_screen_live_graph"
         android:title="Full Screen"
         app:showAsAction="collapseActionView"
         android:orderInCategory="100"
-        />
+        />-->
 
 
     <item

@@ -76,15 +76,21 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     // Needed for live data
     private Handler timerHandler;
     private boolean isShowingLive = false;
-    private int fetchInterval;
-    private int intervalBalance = 500;
+    private int fetchInterval = 5000;
+    //private int intervalBalance = 2000;
     private Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
-            setUpLocationsForMainScreen();
-            timerHandler.postDelayed(this, intervalBalance);
+            try{
+                setUpLocationsForMainScreen();
+            }
+            finally {
+                timerHandler.postDelayed(timerRunnable, fetchInterval);
+            }
+
         }
     };
+
 
     // For snackbar
     CoordinatorLayout coordinatorLayout;
@@ -108,7 +114,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Get the fetch interval from settings
-        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000 - intervalBalance;
+        fetchInterval = Integer.valueOf(appSettings.getString("pref_update_frequency", "5")) * 1000 ;
 
         // Used to put the default account settings for SERC
         /*SharedPreferences.Editor editor = appSettings.edit();
@@ -224,7 +230,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
                     isShowingLive = false;
                     item.setChecked(false);
-                    timerHandler.removeCallbacks(timerRunnable);
+                    stopRepeatingAction();
 
                     // Snackbar
                     Snackbar snackbar = Snackbar.make(coordinatorLayout, "No longer showing live data", Snackbar.LENGTH_LONG)
@@ -234,7 +240,8 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                                     item.setChecked(true);
                                     isShowingLive = true;
 
-                                    timerHandler.postDelayed(timerRunnable, fetchInterval);
+                                    //timerHandler.postDelayed(timerRunnable, fetchInterval);
+                                    startRepeatingAction();
                                 }
                             });
                     // Changing message text color
@@ -253,7 +260,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 else {
                     item.setChecked(true);
                     isShowingLive = true;
-                    timerHandler.postDelayed(timerRunnable, fetchInterval);
+                    //timerHandler.postDelayed(timerRunnable, fetchInterval);
+                    startRepeatingAction();
+
 
                     // Snackbar
                     Snackbar snackbar = Snackbar.make(coordinatorLayout, "Now showing live data", Snackbar.LENGTH_LONG)
@@ -262,7 +271,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                                 public void onClick(View v) {
                                     isShowingLive = false;
                                     item.setChecked(false);
-                                    timerHandler.removeCallbacks(timerRunnable);
+                                    stopRepeatingAction();
+
+
                                 }
                             });
                     // Changing message text color
@@ -283,6 +294,16 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
+    void startRepeatingAction(){
+        Log.i("SERC Log", "Live data started");
+        timerRunnable.run();
+    }
+
+    void stopRepeatingAction(){
+        Log.i("SERC Log", "Live data stopped");
+        timerHandler.removeCallbacks(timerRunnable);
+    }
 
     // Method used to add a "/" at the end and "https://" at the beginning of a link and to remove spaces
     private String fixLink (String linkToFix){
@@ -857,12 +878,26 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return diagonalInches;
     }
 
+    // Stop runnable once activity stops
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopRepeatingAction();
+    }
+
+    // Stop runnable once activity stops
     @Override
     protected void onPause() {
         super.onPause();
-        // To stop live data when Activity pauses
-        timerHandler.removeCallbacks(timerRunnable);
+        stopRepeatingAction();
     }
+
+    // Start runnable once activity stops
+   /* @Override
+    protected void onResume() {
+        super.onResume();
+        startRepeatingAction();
+    }*/
 
 
 }

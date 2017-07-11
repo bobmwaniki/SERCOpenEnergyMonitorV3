@@ -1,6 +1,8 @@
 package edu.strathmore.serc.sercopenenergymonitorv3;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -134,8 +136,17 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         TextView tagTV = holder.tagTextView;
         TextView powerReadingTV = holder.powerReadingTextView;
 
-        nameTV.setText(recordingStation.getStationName());
-        tagTV.setText(recordingStation.getStationTag());
+        SharedPreferences appSetttings = PreferenceManager.getDefaultSharedPreferences(mContext);
+        boolean switchNameTag = appSetttings.getBoolean("pref_general_switch_name_tag", false);
+
+        if (switchNameTag) {
+            tagTV.setText(recordingStation.getStationName());
+            nameTV.setText(recordingStation.getStationTag());
+
+        } else {
+            nameTV.setText(recordingStation.getStationName());
+            tagTV.setText(recordingStation.getStationTag());
+        }
         powerReadingTV.setText(String.valueOf(recordingStation.getStationValueReading()) + " W");
 
     }

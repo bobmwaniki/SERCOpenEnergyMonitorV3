@@ -107,7 +107,18 @@
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/full_page_live_graph"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="0dp"
+            android:layout_weight="120"/>
+
+
+
+        <TextView
+            android:id="@+id/live_graph_bottom_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="10sp"
+            tools:text="Name - Tag"/>
 
 
     </LinearLayout>

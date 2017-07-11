@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -52,7 +53,7 @@ public class LiveGraphActivity extends AppCompatActivity {
     // Graph
     private LineChart lineChart;
     private Long timeBack = 600000L;
-    private int leftOffset = 0;
+    //private int leftOffset = 0;
 
     // Repetitive liveData
     private int fetchInterval = 5000;
@@ -66,7 +67,7 @@ public class LiveGraphActivity extends AppCompatActivity {
                 refreshLiveGraphData(); //this function can change value of mInterval.
             } finally {
                 // 100% guarantee that this always happens, even if
-                // your update method throws an exception
+                // refreshLiveGraphData() throws an exception
                 mHandler.postDelayed(mStatusChecker, fetchInterval);
             }
         }
@@ -90,6 +91,9 @@ public class LiveGraphActivity extends AppCompatActivity {
             stationName = extras.getString("Station_name");
         }
 
+        TextView bottomText = (TextView) findViewById(R.id.live_graph_bottom_textview);
+        bottomText.setText(stationTag + " - " + stationName);
+
 
 
         // Get root link, API key and interval from settings
@@ -105,10 +109,12 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Get LineChart
         lineChart = (LineChart) findViewById(R.id.full_page_live_graph);
 
+        // Draw the graph for on lauch
         generateStartAndEndTime();
         setLink();
         drawLiveGraph(link);
 
+        // Start repeating task
         mHandler = new Handler();
         startRepeatingTask();
 
@@ -135,6 +141,8 @@ public class LiveGraphActivity extends AppCompatActivity {
         FancyButton tenMinBack = (FancyButton) findViewById(R.id.live_graph_10_min_back);
         FancyButton oneMinBack = (FancyButton) findViewById(R.id.live_graph_1_min_back);
 
+
+        /******* Actions for the the buttons *****/
         oneHourBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -145,7 +153,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         thirtyMinBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               redrawGraphForUserTimeBack(30);
+                redrawGraphForUserTimeBack(30);
             }
         });
 
@@ -176,95 +184,62 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //return super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu_live_graph, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        switch (id){
+            /*case R.id.full_screen_live_graph:
+
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    hideSystemUI();
+                    getSupportActionBar().hide();
+                } else{
+                    getSupportActionBar().hide();
+                }c
+                return true;*/
+
+            case R.id.action_reset_zoom_live_graph:
+                lineChart.fitScreen();
+                return true;
+
+            case R.id.action_settings:
+                Intent openSettings = new Intent(LiveGraphActivity.this, SettingsActivity.class);
+                startActivity(openSettings);
+                return true;
+        }
 
 
+
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    // Method used to call refresh data repeatedly
     void startRepeatingTask() {
         mStatusChecker.run();
     }
 
+    // Method used to stop the Handler
     void stopRepeatingTask() {
         mHandler.removeCallbacks(mStatusChecker);
     }
 
-
-
+    // Method used to convert minutes to milliseconds
     private Long minutesToMilliseconds(int minutes){
         return (minutes * 60000L);
     }
 
-    private void redrawGraphForUserTimeBack(int minutes){
-        // Set Time Back
-        timeBack = minutesToMilliseconds(minutes);
-        endTime = getCurrentTimeAsString();
-        startTime = String.valueOf(Long.valueOf(endTime) - timeBack);
-        // Redraw Graph
-        setLink();
-        drawLiveGraph(link);
-    }
-
-    private void refreshLiveGraphData(){
-
-        new CmsApiCall(getBaseContext(), new CmsApiCall.AsyncResponse() {
-            @Override
-            public void processFinish(String output) throws JSONException {
-                JSONArray jsonArray = new JSONArray(output);
-                if (!jsonArray.isNull(0) && jsonArray.length()>0) {
-                    // Get a list of Entry objects from the output
-                    List<Entry> latestEntries = jsonToEntryList(output, true);
-
-                    // Makes sure there is new data
-                    if (latestEntries.size()> 0){
-
-
-                        Log.i("SERC Log", String.valueOf(latestEntries.size()) + " entries to add");
-
-                        LineData currentLineData = lineChart.getLineData();
-                        ILineDataSet currentLineDataSet = currentLineData.getDataSetByIndex(0);
-                        //List<ILineDataSet> lineDataSets = currentLineData.getDataSets();
-
-                        for (int k=0; k<currentLineDataSet.getEntryCount();k++){
-                            Log.i("SERC Log", "Current Entries: " + currentLineDataSet.getEntryForIndex(k).toString());
-                        }
-
-                        for(int j=0; j<latestEntries.size(); j++){
-                            currentLineDataSet.addEntry(latestEntries.get(j));
-                            Log.i("SERC Log", "New entry added: " + latestEntries.get(j).toString());
-                        }
-                        currentLineData.notifyDataChanged();
-
-                        for(int j=0; j<latestEntries.size(); j++){
-                            currentLineDataSet.removeFirst();
-
-                        }
-
-                        /*// Left offset
-                        leftOffset = leftOffset + latestEntries.size();
-
-                        Log.i("SERC Log", "Left Offset: " + leftOffset);
-
-
-                        Log.i("SERC Log", "Move to Entry: " + currentLineDataSet.getEntryForIndex(leftOffset).getX());
-                        */
-                        currentLineData.notifyDataChanged();
-                        lineChart.notifyDataSetChanged();
-                        lineChart.moveViewToX(currentLineDataSet.getEntryForIndex(0).getX());
-
-
-
-                    }
-
-
-
-                }
-
-            }
-        }).execute(link);
-
-//        lineChart.invalidate(); //refresh
-
-    }
-
-
+    // Method used to get the current time from the device and return that UNIX time as a String
     public String getCurrentTimeAsString(){
         // Getting the current time from the system clock in milliseconds
         Long currentTimeMillis = System.currentTimeMillis();
@@ -275,14 +250,17 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
+    // Method used to generate appropriate start and end times for link
     private void generateStartAndEndTime(){
-        // Start and endTime
+        // If the activity is being created, the start time will be the current time and end time
+        // will be some time back that is set in the timeback variable. By default this is 10 min
         if (firstTimeLaunch) {
             endTime = getCurrentTimeAsString();
             startTime = String.valueOf(Long.valueOf(endTime) - timeBack);
             firstTimeLaunch = false;
         }
         else{
+            // This is to make sure the API calls are for time ranges that have not been already checked
             startTime = endTime;
             endTime = getCurrentTimeAsString();
 
@@ -290,18 +268,87 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
+    // Helper method for the buttons on the top of the Live Page Activity
+    private void redrawGraphForUserTimeBack(int minutes){
+        // Set Time Back
+        timeBack = minutesToMilliseconds(minutes);
+        endTime = getCurrentTimeAsString();
+        startTime = String.valueOf(Long.valueOf(endTime) - timeBack);
+        // Redraw Graph
+        setLink();
+        drawLiveGraph(link);
+    }
+
+    // Method used to refresh the data for the graph if the time range is not changing
+    private void refreshLiveGraphData(){
+
+        new CmsApiCall(getBaseContext(), new CmsApiCall.AsyncResponse() {
+            @Override
+            public void processFinish(String output) throws JSONException {
+                JSONArray jsonArray = new JSONArray(output);
+                // Checks that the array is not empty
+                if (!jsonArray.isNull(0) && jsonArray.length()>0) {
+                    // Get a list of Entry objects from the output
+                    List<Entry> latestEntries = jsonToEntryList(output, true);
+
+                    // Makes sure there is new data
+                    if (latestEntries.size()> 0){
+
+                        Log.i("SERC Log", String.valueOf(latestEntries.size()) + " entries to add");
+
+                        // Get the lineData object
+                        LineData currentLineData = lineChart.getLineData();
+                        // Since there's only one data set, it will be at position 0
+                        ILineDataSet currentLineDataSet = currentLineData.getDataSetByIndex(0);
+
+                        for (int k=0; k<currentLineDataSet.getEntryCount();k++){
+                            Log.i("SERC Log", "Current Entries: " + currentLineDataSet.getEntryForIndex(k).toString());
+                        }
+
+                        // Add all the new entries from the list of Entry objects
+                        for(int j=0; j<latestEntries.size(); j++){
+                            currentLineDataSet.addEntry(latestEntries.get(j));
+                            Log.i("SERC Log", "New entry added: " + latestEntries.get(j).toString());
+                        }
+                        currentLineData.notifyDataChanged(); // Notify LineData of the changes
+
+                        // Remove the oldest entries according to how many Entry objects have been added.
+                        // This ensures that the number of data points in the graph remain the same
+                        for(int j=0; j<latestEntries.size(); j++){
+                            currentLineDataSet.removeFirst(); // Notify LineData of the changes
+                        }
+                        currentLineData.notifyDataChanged();
+
+                        // Notify the LineChart of the changes
+                        lineChart.notifyDataSetChanged();
+                        // Move the ViewPoint to the first entry in the current List and refresh the chart.
+                        // This ViewPoint keeps on changing because of the old entries are removed
+                        lineChart.moveViewToX(currentLineDataSet.getEntryForIndex(0).getX());
+
+                    }
+
+                }
+
+            }
+        }).execute(link);
+
+
+    }
+
+    // Method used to draw the initial graph or when the time range changes
     public void drawLiveGraph(final String liveGraphLink){
 
         new EmonCmsApiCall(this, new EmonCmsApiCall.AsyncResponse() {
             @Override
             public void processFinish(String output) throws JSONException {
                 JSONArray jsonArray = new JSONArray(output);
+                // Check the JSON array is not empty
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
                     // Get a list of Entry objects from the output
                     List<Entry> entries = jsonToEntryList(output, false);
 
                     // The following steps are done to prepare for the new data on the graph
-                    lineChart.clear();
+                    lineChart.clear(); // Remove all old points
                     lineChart.invalidate(); //refresh the data
                     lineChart.fitScreen();  // set the zoom level back to the default
 
@@ -321,6 +368,7 @@ public class LiveGraphActivity extends AppCompatActivity {
                     lineChart.animateX(1000);
                 }
                 else{
+                    // If JSON array is empty, show the user that there is no data
                     Toast.makeText(getBaseContext(), "No data in server", Toast.LENGTH_LONG).show();
                 }
 
@@ -431,7 +479,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         return entries;
     }
 
-
+    // Method used to style the graph
     public LineDataSet styleGraphFromSettings(LineDataSet dataSet){
         // Get the applications settings
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
@@ -556,44 +604,6 @@ public class LiveGraphActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        //return super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.menu_live_graph, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        switch (id){
-            case R.id.full_screen_live_graph:
-
-                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    hideSystemUI();
-                    getSupportActionBar().hide();
-                } else{
-                    getSupportActionBar().hide();
-                }
-                return true;
-
-            case R.id.action_reset_zoom_live_graph:
-                lineChart.fitScreen();
-                return true;
-
-            case R.id.action_settings:
-                Intent openSettings = new Intent(LiveGraphActivity.this, SettingsActivity.class);
-                startActivity(openSettings);
-                return true;
-        }
-
-
-
-
-
-        return super.onOptionsItemSelected(item);
-    }
 
 
     // This snippet hides the system bars.
@@ -638,12 +648,14 @@ public class LiveGraphActivity extends AppCompatActivity {
         stopRepeatingTask();
     }
 
+    // Stop runnable once activity stops
     @Override
     protected void onPause() {
         super.onPause();
         stopRepeatingTask();
     }
 
+    // Start runnable once activity stops
     @Override
     protected void onResume() {
         super.onResume();

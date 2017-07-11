@@ -51,6 +51,13 @@
         android:title="@string/pref_title_check_change_in_data"
         />
 
+    <SwitchPreference
+        android:key="pref_general_switch_name_tag"
+        android:defaultValue="false"
+        android:title="@string/pref_general_switch_name_tag_title"
+        android:summary="@string/pref_general_switch_name_tag_summary"
+        />
+
 
 
     <!--<EditTextPreference
