@@ -2,6 +2,7 @@ package edu.strathmore.serc.sercopenenergymonitorv3;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -23,18 +24,34 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
     private Context mContext;
     public AsyncResponse delegate = null;
     private boolean hasError = false;
+    private boolean mForSwipeToRefresh  = false;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     public interface AsyncResponse {
         void processFinish(String output) throws JSONException;
     }
 
-    public CmsApiCall(Context context ,AsyncResponse delegate){
+    public CmsApiCall(Context context, SwipeRefreshLayout swipeRefreshLayout, AsyncResponse delegate){
         this.delegate = delegate;
         mContext = context;
+        mSwipeRefreshLayout = swipeRefreshLayout;
+
+        mForSwipeToRefresh = true;
     }
 
+    public CmsApiCall(Context context, AsyncResponse delegate){
+        this.delegate = delegate;
+        mContext = context;
+        mForSwipeToRefresh = false;
+    }
 
-
+    @Override
+    protected void onPreExecute() {
+        if(mForSwipeToRefresh){
+            mSwipeRefreshLayout.setRefreshing(true);
+        }
+        super.onPreExecute();
+    }
 
     @Override
     protected String doInBackground(String... params) {
@@ -81,7 +98,11 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
         if (hasError){
+            // Alert user
             Toast.makeText(mContext, "Error. Could not fetch data", Toast.LENGTH_SHORT).show();
+            if (mForSwipeToRefresh) {
+                stopRefreshLayoutRefreshing();
+            }
         }
         try {
             delegate.processFinish(s);
@@ -89,6 +110,12 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
             e.printStackTrace();
         }
 
+    }
+
+    public void stopRefreshLayoutRefreshing(){
+        if (mSwipeRefreshLayout.isRefreshing()) {
+            mSwipeRefreshLayout.setRefreshing(false);
+        }
     }
 
 

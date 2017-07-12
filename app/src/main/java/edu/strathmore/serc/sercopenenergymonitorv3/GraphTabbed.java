@@ -528,7 +528,10 @@ public class GraphTabbed extends AppCompatActivity {
                 mViewPager.setCurrentItem(1, true);
 
                 // Animate Y axis
-                lineChart.animateY(1000);
+                boolean disableAnimation = appSettings.getBoolean("pref_general_disable_animations", false);
+                if (!disableAnimation) {
+                    lineChart.animateY(1000);
+                }
 
             }
         }).execute(graphLink);

@@ -64,11 +64,10 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     // Needs to be global as it is used both in the onCreate and refresh method
     private RecyclerViewAdapter adapter;
 
-    // Result from EmonCms
-    private String resultFromEmonCms = "";
-
     // Needed in more than one method
     private RecyclerView recyclerView;
+
+
 
     // Checks if the activity is launching
     private boolean firstTimeLaunch = true;
@@ -82,7 +81,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         @Override
         public void run() {
             try{
-                setUpLocationsForMainScreen();
+                setUpLocationsForMainScreen(false);
             }
             finally {
                 timerHandler.postDelayed(timerRunnable, fetchInterval);
@@ -170,8 +169,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         timerHandler = new Handler();
 
 
-        // Set up the locations in the main screen
-        setUpLocationsForMainScreen();
+
 
 
 
@@ -183,15 +181,21 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 swipeRefreshLayout.setRefreshing(true);
 
                 // Calls the refresh content method defined within this class
-                setUpLocationsForMainScreen();
+                setUpLocationsForMainScreen(true);
 
-                swipeRefreshLayout.setRefreshing(false);
+                //stopRefreshLayoutRefreshing();
+
             }
         });
 
 
+        // Set up the locations in the main screen
+        setUpLocationsForMainScreen(false);
+
+
 
     }
+
 
     // Creates the menu from the xml layout
     @Override
@@ -448,7 +452,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     editor.putString("api_key_edit", userInput);
                     editor.apply();
 
-                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen();
+                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen(false);
 
                 }
             });
@@ -530,7 +534,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                     editor.putString("root_link_editpref", userInput);
                     editor.apply();
 
-                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen();
+                    ((MainActivityRecyclerView)getActivity()).setUpLocationsForMainScreen(false);
 
                 }
             });
@@ -664,9 +668,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     }
 
     // Main method that sets up all the cards in the main screen
-    public void setUpLocationsForMainScreen(){
+    public void setUpLocationsForMainScreen(boolean forSwipeToRefresh){
         // Get Root/API key from settings
-        final SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
         rootLinkAddress = appSettings.getString("root_link_editpref","");
         // Make sure link is not malformed
         rootLinkAddress = fixLink(rootLinkAddress);
@@ -676,89 +680,113 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         // form of a continuous String.
         //result = new CmsApiCall(MainActivityRecyclerView.this).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey).get();
 
+        // This checks if the the method has been called by the SwipeRefreshLayout and creates the
+        // appropriate constructor for it
+        if (forSwipeToRefresh) {
+            // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
+            new CmsApiCall(MainActivityRecyclerView.this, swipeRefreshLayout, new CmsApiCall.AsyncResponse() {
+                @Override
+                public void processFinish(String output) throws JSONException {
+                   stepToTake(output);
+                }
+            }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
 
-        // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
-        new CmsApiCall(MainActivityRecyclerView.this, new CmsApiCall.AsyncResponse() {
-            @Override
-            public void processFinish(String output) throws JSONException {
-                // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
-                ArrayList<RecordingStation> recordingStations = new ArrayList<>();
 
-                resultFromEmonCms = output;
-                // Get list of RecordingStation objects from response
-                recordingStations = jsonToRecordingStationList(output);
+        } else{
 
-                // Get subset of locations for settings
-                ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations);
-                // Arranges the Stations alphabetically by tag name
-                SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                final boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
-                if (recordingStationsForAdapter.size()>1){
-                    Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
-                        @Override
-                        public int compare(RecordingStation o1, RecordingStation o2) {
-                            int comp;
-                            // If Preference is switched on, arrange by name first
-                            if (switchNameTag) {
-                                comp = o1.getStationName().compareTo(o2.getStationName());
-                                if (comp==0) {
-                                    comp = o1.getStationTag().compareTo(o2.getStationTag());
-                                }
-                            } else {
-                                comp = o1.getStationTag().compareTo(o2.getStationTag());
-                                if (comp==0) {
-                                    comp = o1.getStationName().compareTo(o2.getStationName());
-                                }
-                            }
-                            return comp;
+            // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
+            new CmsApiCall(MainActivityRecyclerView.this, new CmsApiCall.AsyncResponse() {
+                @Override
+                public void processFinish(String output) throws JSONException {
+                    stepToTake(output);
+                }
+            }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
+
+        }
+
+
+    }
+
+    private void stepToTake(String output) throws JSONException {
+        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
+        ArrayList<RecordingStation> recordingStations = new ArrayList<>();
+
+        // Get list of RecordingStation objects from response
+        recordingStations = jsonToRecordingStationList(output);
+
+        // Get subset of locations for settings
+        ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations);
+        // Arranges the Stations alphabetically by tag name
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        final boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
+        if (recordingStationsForAdapter.size()>1){
+            Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
+                @Override
+                public int compare(RecordingStation o1, RecordingStation o2) {
+                    int comp;
+                    // If Preference is switched on, arrange by name first
+                    if (switchNameTag) {
+                        comp = o1.getStationName().compareTo(o2.getStationName());
+                        if (comp==0) {
+                            comp = o1.getStationTag().compareTo(o2.getStationTag());
                         }
-                    });
+                    } else {
+                        comp = o1.getStationTag().compareTo(o2.getStationTag());
+                        if (comp==0) {
+                            comp = o1.getStationName().compareTo(o2.getStationName());
+                        }
+                    }
+                    return comp;
                 }
+            });
+        }
 
-                // Checks if the activity is being launched or if it is a refresh
-                if (firstTimeLaunch) {
-                    // Binding the adapter to the RecyclerView
-                    adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
-                    recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
-                    recyclerView.setAdapter(adapter);
+        // Checks if the activity is being launched or if it is a refresh
+        if (firstTimeLaunch) {
+            // Binding the adapter to the RecyclerView
+            adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
+            recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
+            recyclerView.setAdapter(adapter);
 
-                    // Check if the device has a large screen or is in Landscape mode
-                    // Use a grid layout when the app is in landscape or devices has a 6.5inch screen or bigger
-                    double screenSize = getScreenSize();
-                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE || screenSize>=6.5) {
-                        recyclerView.setLayoutManager(new GridLayoutManager(MainActivityRecyclerView.this, 2));
-                    }
-                    else{
-                        // Use a linear layout when the app is in portrait
-                        recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
-                    }
-
-                    // Set the animation from wasabeef's recycler-animator library
-                    recyclerView.setItemAnimator(new SlideInUpAnimator());
-
-                    setUpClickListeners();
-
-                    // Makes sure this loop does not repeat again while activity has not closed
-                    firstTimeLaunch = false;
-
-
-                } else{
-
-                    if (isShowingLive) {
-                        adapter.notifyMassDataChange(recordingStationsForAdapter);
-
-
-                    } else{
-                        // Clear the adapter and load up new content to adapter
-                        adapter.clear();
-                        adapter.addAll(recordingStationsForAdapter);
-                    }
-
-                }
-
-
+            // Check if the device has a large screen or is in Landscape mode
+            // Use a grid layout when the app is in landscape or devices has a 6.5inch screen or bigger
+            double screenSize = getScreenSize();
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE || screenSize>=6.5) {
+                recyclerView.setLayoutManager(new GridLayoutManager(MainActivityRecyclerView.this, 2));
             }
-        }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
+            else{
+                // Use a linear layout when the app is in portrait
+                recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
+            }
+
+            // Set the animation from wasabeef's recycler-animator library
+            boolean disableAnimation = appSettings.getBoolean("pref_general_disable_animations", false);
+            if (!disableAnimation) {
+                recyclerView.setItemAnimator(new SlideInUpAnimator());
+            }
+
+            setUpClickListeners();
+
+            // Makes sure this loop does not repeat again while activity has not closed
+            firstTimeLaunch = false;
+
+
+        } else{
+
+            if (isShowingLive) {
+                adapter.notifyMassDataChange(recordingStationsForAdapter);
+
+
+            } else{
+                // Clear the adapter and load up new content to adapter
+                adapter.clear();
+                adapter.addAll(recordingStationsForAdapter);
+            }
+
+        }
+
+        // Stops the indicator in the swipe to refresh layout from spinning
+        stopRefreshLayoutRefreshing();
 
 
     }
@@ -892,6 +920,13 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
 
         return diagonalInches;
+    }
+
+    // Method to stop the SwipeRefreshLayout from spinning if it already spinning
+    public void stopRefreshLayoutRefreshing(){
+        if (swipeRefreshLayout.isRefreshing()) {
+            swipeRefreshLayout.setRefreshing(false);
+        }
     }
 
     // Stop runnable once activity stops

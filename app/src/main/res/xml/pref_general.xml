@@ -58,6 +58,12 @@
         android:summary="@string/pref_general_switch_name_tag_summary"
         />
 
+    <SwitchPreference
+        android:key="pref_general_disable_animations"
+        android:defaultValue="false"
+        android:title="@string/pref_general_disable_animations_title"
+        />
+
 
 
     <!--<EditTextPreference

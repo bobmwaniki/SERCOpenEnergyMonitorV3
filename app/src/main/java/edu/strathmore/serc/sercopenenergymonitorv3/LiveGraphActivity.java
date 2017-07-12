@@ -345,6 +345,9 @@ public class LiveGraphActivity extends AppCompatActivity {
                 JSONArray jsonArray = new JSONArray(output);
                 // Check the JSON array is not empty
                 if (!jsonArray.isNull(0) && jsonArray.length()>0) {
+
+                    SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+
                     // Get a list of Entry objects from the output
                     List<Entry> entries = jsonToEntryList(output, false);
 
@@ -366,7 +369,10 @@ public class LiveGraphActivity extends AppCompatActivity {
                     // Sets the LineData object to the LineChart object lineChart that is part of the view
                     lineChart.setData(lineData);
                     lineChart.notifyDataSetChanged();
-                    lineChart.animateX(1000);
+                    boolean disableAnimation = appSettings.getBoolean("pref_general_disable_animations", false);
+                    if (!disableAnimation) {
+                        lineChart.animateX(1000);
+                    }
                 }
                 else{
                     // If JSON array is empty, show the user that there is no data
