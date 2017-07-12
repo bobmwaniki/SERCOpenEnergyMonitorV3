@@ -322,6 +322,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
+            bindPreferenceSummaryToValue(findPreference("pref_graph_line_style"));
             bindPreferenceSummaryToValue(findPreference("graph_x_axis_position_listpref"));
             bindPreferenceSummaryToValue(findPreference("graph_x_axis_angle_listpref"));
             bindPreferenceSummaryToValue(findPreference("graph_default_duration_listpref"));

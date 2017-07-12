@@ -58,12 +58,38 @@
             android:summary="@string/pref_graph_line_color_summary"
             />
 
+
+        <ListPreference
+            android:defaultValue="1"
+            android:key="graph_fill_color_listpref"
+            android:entries="@array/pref_graph_fill_color_entries"
+            android:entryValues="@array/pref_graph_fill_color_values"
+            android:title="@string/pref_graph_fill_color_title"
+            android:summary="@string/pref_graph_fill_color_summary"
+            />
+
+        <ListPreference
+            android:key="pref_graph_line_style"
+            android:defaultValue="1"
+            android:title="@string/pref_graph_line_style_title"
+            android:entries="@array/pref_graph_line_style_entries"
+            android:entryValues="@array/pref_graph_line_style_values"
+            />
+
         <SwitchPreference
             android:defaultValue="true"
             android:title="@string/pref_grid_draw_graph_title"
             android:summary="@string/pref_grid_draw_graph_summary"
             android:key="graph_draw_grid_pref"
             />
+
+        <SwitchPreference
+            android:key="pref_graph_smoothen_line"
+            android:defaultValue="false"
+            android:title="@string/pref_graph_smoothen_line_title"
+            android:summary="@string/pref_graph_smoothen_line_summary"
+            />
+
 
 
     </PreferenceCategory>
@@ -109,7 +135,7 @@
     </PreferenceCategory>
 
 <PreferenceCategory
-    android:title="Live Graph Settings"
+    android:title="Live Graph Only"
     android:key="pref_live_graph_category">
 
     <SwitchPreference

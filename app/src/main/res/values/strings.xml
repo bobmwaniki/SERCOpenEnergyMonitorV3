@@ -71,6 +71,11 @@
     <string name="pref_graph_line_color_title">Line Color</string>
     <string name="pref_graph_line_color_summary">Changes the color of the line for the graph</string>
 
+    <string name="pref_graph_fill_color_title">Fill Color for Historical Graph</string>
+    <string name="pref_graph_fill_color_summary">Changes the color of the fill underneath the graph</string>
+
+    <string name="pref_graph_line_style_title">Line style for Historical Graph</string>
+
     <string name="pref_graph_default_duration_title">Default Duration on \'Draw Graph\' click</string>
 
 
@@ -81,6 +86,10 @@
     <string name="pref_graph_x_axis_position_title">X-Axis Label Position</string>
 
     <string name="pref_graph_x_axis_angle_title">Angle the X-Axis label makes with X-Axis</string>
+
+
+    <string name="pref_graph_smoothen_line_title">Smoother line</string>
+    <string name="pref_graph_smoothen_line_summary">Shows smoother line between data points</string>
 
     <string-array name="pref_graph_zero_titles">
         <item>None</item>
@@ -152,6 +161,47 @@
 
     </string-array>
 
+    <string-array name="pref_graph_fill_color_entries">
+        <item>None</item>
+        <item>Orange</item>
+        <item>Cyan</item>
+        <item>Blue</item>
+        <item>Green</item>
+        <item>Magenta</item>
+        <item>Yellow</item>
+
+    </string-array>
+
+    <string-array name="pref_graph_fill_color_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+
+    </string-array>
+
+    <string-array name="pref_graph_line_style_entries">
+        <item>Show none</item>
+        <item>Show values only</item>
+        <item>Show circles only</item>
+        <item>Show circles and values</item>
+
+    </string-array>
+
+    <string-array name="pref_graph_line_style_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+
+
+
+    </string-array>
+
+
     <string-array name="pref_graph_x_axis_time_date_entries">
         <item>Date only</item>
         <item>Time only</item>
@@ -168,6 +218,7 @@
 
 
     <string-array name="pref_graph_x_axis_angle_entries">
+        <item>0\u00B0</item>
         <item>10\u00B0</item>
         <item>30\u00B0</item>
         <item>45\u00B0</item>
@@ -177,6 +228,7 @@
     </string-array>
 
     <string-array name="pref_graph_x_axis_angle_values">
+        <item>0</item>
         <item>10</item>
         <item>30</item>
         <item>45</item>
@@ -326,6 +378,7 @@
         all the data points will be smooth rather that a straight line cnnnecting each point</string>
     <string name="pref_general_switch_name_tag_title">Switch Name and Tag</string>
     <string name="pref_general_switch_name_tag_summary">If turned on, the Location name and tag will switch position on the main screen</string>
+
 
 
 </resources>

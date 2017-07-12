@@ -19,6 +19,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateFormat;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -358,6 +359,29 @@ public class GraphTabbed extends AppCompatActivity {
                     String xAxisAngle = appSettings.getString("graph_x_axis_angle_listpref", "45");
                     styledXAxis.setLabelRotationAngle(Float.valueOf(xAxisAngle));
 
+
+                    // Checks if screen size
+                    DisplayMetrics metrics = new DisplayMetrics();
+                    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                    // Calculate screen size
+                    float yInches= metrics.heightPixels/metrics.ydpi;
+                    float xInches= metrics.widthPixels/metrics.xdpi;
+                    double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
+
+                    int userChoice = Integer.valueOf(appSettings.getString("graph_x_axis_time_date", "3")) ;
+                    if(Float.valueOf(xAxisAngle) == 0f && userChoice ==3){
+                        if (diagonalInches<5d) {
+                            styledXAxis.setLabelCount(2, true);
+                        }
+                        else if (diagonalInches>5d && diagonalInches<6d) {
+                            styledXAxis.setLabelCount(3, true);
+                        } else if (diagonalInches>6d) {
+                            styledXAxis.setLabelCount(5, true);
+                        }
+
+                    }
+
+
                     // Removing right Y Axis labels
                     YAxis rightYAxis = lineChart.getAxisRight();
                     // Get from settings
@@ -371,35 +395,103 @@ public class GraphTabbed extends AppCompatActivity {
                     Log.i("SERC Log", "Configuring the Data Set");
                     LineDataSet dataSet = new LineDataSet(entries, "Power");
 
+
                     // Getting the color of the line and setting it
                     int graphColor = Integer.valueOf(appSettings.getString("graph_line_color_listpref", "1"));
+                    int currentLineColor = Color.RED;
                     switch (graphColor){
                         case 1:
-                            dataSet.setColor(Color.RED);
+                            currentLineColor = Color.RED;
                             break;
                         case 2:
-                            dataSet.setColor(Color.CYAN);
+                            currentLineColor = Color.CYAN ;
                             break;
                         case 3:
-                            dataSet.setColor(Color.BLACK);
+                            currentLineColor = Color.BLACK;
                             break;
                         case 4:
-                            dataSet.setColor(Color.BLUE);
+                            currentLineColor = Color.BLUE;
                             break;
                         case 5:
-                            dataSet.setColor(Color.GREEN);
+                            currentLineColor = Color.GREEN;
                             break;
                         case 6:
-                            dataSet.setColor(Color.MAGENTA);
+                            currentLineColor = Color.MAGENTA;
                             break;
                         case 7:
-                            dataSet.setColor(Color.YELLOW);
+                            currentLineColor = Color.YELLOW;
+                            break;
+
+                    }
+                    dataSet.setColor(currentLineColor);
+
+                    // Fill color underneath the graph
+                    int fillColor = Integer.valueOf(appSettings.getString("graph_fill_color_listpref","1"));
+                    if (fillColor>1) {
+                        dataSet.setDrawFilled(true);
+                    }
+                    switch (fillColor){
+                        case 2:
+                            dataSet.setFillColor(Color.parseColor("#d3a303")); //Orange
+                            break;
+                        case 3:
+                            dataSet.setFillColor(Color.CYAN);
+                            break;
+                        case 4:
+                            dataSet.setFillColor(Color.BLUE);
+                            break;
+                        case 5:
+                            dataSet.setFillColor(Color.GREEN);
+                            break;
+                        case 6:
+                            dataSet.setFillColor(Color.MAGENTA);
+                            break;
+                        case 7:
+                            dataSet.setFillColor(Color.YELLOW);
+                            break;
+                    }
+
+                    // Make line smoother
+                    boolean showSmoothline = appSettings.getBoolean("pref_graph_smoothen_line",true);
+                    if (showSmoothline) {
+                        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+                    }
+
+
+                    // Line Style
+                    int lineStyle = Integer.valueOf(appSettings.getString("pref_graph_line_style", "1"));
+                    switch (lineStyle){
+                        case 0:
+                            dataSet.setDrawCircles(false);
+                            dataSet.setDrawValues(false);
+                            break;
+
+                        case 1:
+                            dataSet.setDrawCircles(false);
+                            dataSet.setDrawValues(true);
+                            break;
+
+                        case 2:
+                            dataSet.setDrawCircles(true);
+                            dataSet.setDrawCircleHole(true);
+                            dataSet.setCircleRadius(1.6f);
+                            dataSet.setCircleHoleRadius(1.2f);
+                            dataSet.setCircleColor(currentLineColor);
+                            dataSet.setDrawValues(false);
+                            break;
+
+                        case 3:
+                            dataSet.setDrawCircles(true);
+                            dataSet.setDrawCircleHole(true);
+                            dataSet.setCircleRadius(1.6f);
+                            dataSet.setCircleHoleRadius(1.2f);
+                            dataSet.setCircleColor(currentLineColor);
+                            dataSet.setDrawValues(true);
                             break;
 
                     }
 
-                    // Removes circles at every data point
-                    dataSet.setDrawCircles(false);
+
 
                 /* As a last step, one needs to add the LineDataSet object (or objects) that were created
                  * to a LineData object. This object holds all data that is represented by a Chart

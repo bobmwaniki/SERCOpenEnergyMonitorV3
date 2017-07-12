@@ -10,6 +10,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -513,7 +514,26 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Sets the rotation angle of the x axis labels
         String xAxisAngle = appSettings.getString("graph_x_axis_angle_listpref", "45");
         styledXAxis.setLabelRotationAngle(Float.valueOf(xAxisAngle));
-        //styledXAxis.setLabelCount(5, true);
+        int userChoice = Integer.valueOf(appSettings.getString("graph_x_axis_time_date", "3")) ;
+        // Checks if screen size
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        // Calculate screen size
+        float yInches= metrics.heightPixels/metrics.ydpi;
+        float xInches= metrics.widthPixels/metrics.xdpi;
+        double diagonalInches = Math.sqrt(xInches*xInches + yInches*yInches);
+
+        if(Float.valueOf(xAxisAngle) == 0f && userChoice ==3){
+            if (diagonalInches<5d) {
+                styledXAxis.setLabelCount(2, true);
+            }
+            else if (diagonalInches>5d && diagonalInches<6d) {
+                styledXAxis.setLabelCount(3, true);
+            } else if (diagonalInches>6d) {
+                styledXAxis.setLabelCount(5, true);
+            }
+
+        }
 
         // Removing right Y Axis labels
         YAxis rightYAxis = lineChart.getAxisRight();
