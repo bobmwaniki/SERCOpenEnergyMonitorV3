@@ -214,6 +214,7 @@ public class LiveGraphActivity extends AppCompatActivity {
 
             case R.id.action_settings:
                 Intent openSettings = new Intent(LiveGraphActivity.this, SettingsActivity.class);
+                // This enables the Settings to open to Graph Settings immediately
                 openSettings.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GraphPreferenceFragment.class.getName());
                 openSettings.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
                 startActivity(openSettings);

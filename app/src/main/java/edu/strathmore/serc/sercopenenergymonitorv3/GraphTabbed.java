@@ -563,6 +563,7 @@ public class GraphTabbed extends AppCompatActivity {
 
             case R.id.action_settings:
                 Intent openSettings = new Intent(this, SettingsActivity.class);
+                // Open to graph Settings without showing the other categories
                 openSettings.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GraphPreferenceFragment.class.getName());
                 openSettings.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
                 startActivity(openSettings);
