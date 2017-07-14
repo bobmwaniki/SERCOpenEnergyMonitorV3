@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
@@ -213,6 +214,8 @@ public class LiveGraphActivity extends AppCompatActivity {
 
             case R.id.action_settings:
                 Intent openSettings = new Intent(LiveGraphActivity.this, SettingsActivity.class);
+                openSettings.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GraphPreferenceFragment.class.getName());
+                openSettings.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
                 startActivity(openSettings);
                 return true;
         }

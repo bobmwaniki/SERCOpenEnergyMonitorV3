@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -562,7 +563,10 @@ public class GraphTabbed extends AppCompatActivity {
 
             case R.id.action_settings:
                 Intent openSettings = new Intent(this, SettingsActivity.class);
+                openSettings.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.GraphPreferenceFragment.class.getName());
+                openSettings.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
                 startActivity(openSettings);
+
                 return true;
 
             case R.id.action_reset_zoom:

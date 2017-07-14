@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
@@ -46,9 +45,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jp.wasabeef.recyclerview.animators.SlideInUpAnimator;
-import rm.com.longpresspopup.LongPressPopup;
-import rm.com.longpresspopup.LongPressPopupBuilder;
-import rm.com.longpresspopup.PopupInflaterListener;
 
 public class MainActivityRecyclerView extends AppCompatActivity {
 
@@ -338,9 +334,51 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         return mFixedString;
     }
 
+    // Pop on LongPress
+    public static class LocationDetails extends DialogFragment{
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            //return super.onCreateDialog(savedInstanceState);
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            LayoutInflater inflater = getActivity().getLayoutInflater();
+
+            View view = inflater.inflate(R.layout.popup_layout, null);
+            builder.setView(view);
+
+            // Get the TextViews
+            TextView locationID = (TextView) view.findViewById(R.id.popup_location_id);
+            TextView locationTag = (TextView) view.findViewById(R.id.popup_location_tags);
+            TextView locationName = (TextView) view.findViewById(R.id.popup_location_name);
+            TextView locationReading = (TextView) view.findViewById(R.id.popup_location_reading);
+            TextView locationTime = (TextView) view.findViewById(R.id.popup_location_time);
+
+            // Get information sent as Bundle
+            Bundle bundle = getArguments();
+
+            int stationID = bundle.getInt("location_ID", 0);
+            String stationName = bundle.getString("location_name","");
+            String stationTag = bundle.getString("location_tag","");
+            int stationReading = bundle.getInt("location_reading",0);
+            long stationTime = bundle.getLong("location_time",0l);
+            Date currentTime = new Date(stationTime*1000l);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, d MMM yyyy h:mm a");
+            String time = simpleDateFormat.format(currentTime);
+
+            // Set text
+            locationID.setText(String.valueOf(stationID));
+            locationTag.setText(stationTag);
+            locationName.setText(stationName);
+            locationReading.setText(String.valueOf(stationReading));
+            locationTime.setText(time);
+
+            return builder.create();
+
+        }
+    }
+
     // Deals with pop-up when item is clicked
     public static class LocationContextMenu extends DialogFragment{
-
 
 
         @NonNull
@@ -831,44 +869,34 @@ public class MainActivityRecyclerView extends AppCompatActivity {
          * This opens a Dialog showing all the information stored for the that RecordingStation object
          */
 
-                    /*adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
-                        @Override
-                        public void onItemLongClick(View itemView, int position) {
-                            AlertDialog.Builder  alertDialogBuilder = new AlertDialog.Builder(MainActivityRecyclerView.this);
-                            alertDialogBuilder.setTitle("Station Details");
-                            alertDialogBuilder.setIcon(R.mipmap.ic_launcher_serc);
-                            alertDialogBuilder.setPositiveButton("Ok", null);
-
-                            Date currentTime = new Date(adapter.getRecordingStation(position).getStationTime()*1000);
-                            SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy h:mm a");
-                            String stationTime = sdf.format(currentTime);
-                            CharSequence[] stationDetails = {
-                                    "Station ID: " + String.valueOf(adapter.getRecordingStation(position).getStationID()),
-                                    "Station Name: " + adapter.getRecordingStation(position).getStationName(),
-                                    "Station Tag: " + adapter.getRecordingStation(position).getStationTag(),
-                                    "Current Reading: " + String.valueOf(adapter.getRecordingStation(position).getStationValueReading()),
-                                    "Time of current reading: " + stationTime};
-
-                            alertDialogBuilder.setItems(stationDetails, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    if (which == 1){
-                                        Toast.makeText(getBaseContext(), "The ID sent from the EmonCMS platform for this particular station", Toast.LENGTH_SHORT).show();
-                                    }
-
-                                }
-                            });
-
-                            AlertDialog alertDialog = alertDialogBuilder.create();
-                            alertDialog.show();
-
-
-
-
-                        }
-                    });*/
-
         adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
+            @Override
+            public void onItemLongClick(View itemView, int position) {
+
+                int station_ID = adapter.getRecordingStation(position).getStationID();
+                String station_name = adapter.getRecordingStation(position).getStationName();
+                String station_tag = adapter.getRecordingStation(position).getStationTag();
+                int station_reading = adapter.getRecordingStation(position).getStationValueReading();
+                long station_time = adapter.getRecordingStation(position).getStationTime();
+
+                Bundle args = new Bundle();
+                args.putInt("location_ID", station_ID);
+                args.putString("location_name", station_name);
+                args.putString("location_tag", station_tag);
+                args.putInt("location_reading", station_reading);
+                args.putLong("location_time", station_time);
+
+
+                // New instance of LocationDetails
+                LocationDetails locationDetails = new LocationDetails();
+                locationDetails.setArguments(args);
+                FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                locationDetails.show(ft, "location_details_popup");
+
+            }
+        });
+
+        /*adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
             @Override
             public void onItemLongClick(View itemView, final int position) {
 
@@ -906,7 +934,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 // will show the given view inside the popup, call unregister() to stop
                 popup.register();
             }
-        });
+        });*/
     }
 
     // Returns the diagonal screen size of the device in inches
