@@ -725,7 +725,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
             new CmsApiCall(MainActivityRecyclerView.this, swipeRefreshLayout, new CmsApiCall.AsyncResponse() {
                 @Override
                 public void processFinish(String output) throws JSONException {
-                   stepToTake(output);
+                    setUpSteps(output);
                 }
             }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
 
@@ -736,7 +736,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
             new CmsApiCall(MainActivityRecyclerView.this, new CmsApiCall.AsyncResponse() {
                 @Override
                 public void processFinish(String output) throws JSONException {
-                    stepToTake(output);
+                    setUpSteps(output);
                 }
             }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
 
@@ -745,7 +745,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
     }
 
-    private void stepToTake(String output) throws JSONException {
+    private void setUpSteps(String output) throws JSONException {
         // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
         ArrayList<RecordingStation> recordingStations = new ArrayList<>();
 
@@ -811,7 +811,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
         } else{
 
-            if (isShowingLive) {
+            boolean disableAnimations = appSettings.getBoolean("pref_general_disable_animations", false);
+
+            if (isShowingLive || disableAnimations) {
                 adapter.notifyMassDataChange(recordingStationsForAdapter);
 
 
