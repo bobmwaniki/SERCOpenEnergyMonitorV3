@@ -11,6 +11,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -48,8 +49,6 @@ import java.util.Calendar;
 import java.util.List;
 
 import mehdi.sakout.fancybuttons.FancyButton;
-
-import static edu.strathmore.serc.sercopenenergymonitorv3.R.id.container;
 
 /**
  * This is the Graph Page that is inflated when a user clicks on a location in the main screen. It
@@ -99,6 +98,9 @@ public class GraphTabbed extends AppCompatActivity {
     private LineChart lineChart;
 
 
+    private AppBarLayout appBarLayout;
+
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -119,22 +121,53 @@ public class GraphTabbed extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_tabbed);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.graph_tabbed_toolbar);
         setSupportActionBar(toolbar);
 
-        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
+        final android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+
+        appBarLayout = (AppBarLayout) findViewById(R.id.appbar_graph_tabbed);
+
+
+
 
         // Create the adapter that will return a fragment for each of the two
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(container);
+        mViewPager = (ViewPager) findViewById(R.id.graph_tabbed_viewpager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+
+        // Used to collapse the toolbar when on the graph tab and expand it on the parameters tab
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int position = tab.getPosition();
+                mViewPager.setCurrentItem(position);
+                if (position == 0){
+                    appBarLayout.setExpanded(true,true);
+                }
+                else if (position == 1){
+                    appBarLayout.setExpanded(false,true);
+                }
+
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
 
 
 
@@ -601,7 +634,13 @@ public class GraphTabbed extends AppCompatActivity {
 
             // Sets the graph title (TextView at the top of the activity) to be have the title and tag from the intent
             TextView graphHeading = (TextView) parametersView.findViewById(R.id.graph_title);
-            graphHeading.setText(((GraphTabbed)getActivity()).stationTag + " - " + ((GraphTabbed)getActivity()).stationName);
+            SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getContext());
+            boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
+            if (switchNameTag) {
+                graphHeading.setText(((GraphTabbed)getActivity()).stationName + " - " + ((GraphTabbed)getActivity()).stationTag);
+            } else {
+                graphHeading.setText(((GraphTabbed)getActivity()).stationTag + " - " + ((GraphTabbed)getActivity()).stationName);
+            }
 
             // OnClickListener for "Set Start Date" button to show DatePicker Dialog
             FancyButton calStart = (FancyButton) parametersView.findViewById(R.id.btn_set_start_date);
@@ -684,7 +723,6 @@ public class GraphTabbed extends AppCompatActivity {
             });
 
             // Set Help Text to show the default duration when "Draw Graph" is pressed
-            SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getContext());
             String defDays = appSettings.getString("graph_default_duration_listpref", "7");
             TextView helpText = (TextView) parametersView.findViewById(R.id.help_text_draw_graph);
 

@@ -22,4 +22,26 @@
         />
 
 
+
+    <PreferenceCategory
+        android:key="preference_container"
+        android:title="Accounts">
+
+
+        <Preference
+            android:key="add_account_list"
+            android:widgetLayout="@layout/account_list"
+
+            />
+
+
+        <Preference
+            android:key="add_account_button"
+
+
+            />
+
+        </PreferenceCategory>
+
+
 </PreferenceScreen>

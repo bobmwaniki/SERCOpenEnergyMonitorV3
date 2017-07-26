@@ -32,6 +32,20 @@
         android:checkable="true"
         />
 
+    <item
+        android:id="@+id/remove_account"
+        android:orderInCategory="1300"
+        android:title="Remove account"
+        app:showAsAction="never"
+        />
+
+    <item
+        android:id="@+id/show_ac_list"
+        android:orderInCategory="1300"
+        android:title="Show Account List"
+        app:showAsAction="never"
+        />
+
 
 
 </menu>

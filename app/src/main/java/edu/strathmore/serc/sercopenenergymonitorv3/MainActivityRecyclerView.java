@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import jp.wasabeef.recyclerview.animators.SlideInUpAnimator;
@@ -89,6 +90,8 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
     // For snackbar
     CoordinatorLayout coordinatorLayout;
+
+
 
 
     @Override
@@ -165,7 +168,32 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         timerHandler = new Handler();
 
 
+        /*SharedPreferences.Editor editor = appSettings.edit();
+        editor.putString("emon_test_1", "1");
+        editor.putString("emon_test_2", "2");
+        editor.apply();*/
 
+        Map<String,?> appSettingsAll =  appSettings.getAll();
+        //int count = 0;
+        for(Map.Entry<String,?> entry:appSettingsAll.entrySet()){
+
+            if(entry.getKey().contains("emon")){
+                //count++;
+                //Log.i("Emon Test","Key: " +  entry.getKey() + " ,Value: " + entry.getValue().toString());
+
+            }
+
+        }
+        //Log.i("Emon Test","Count: " + count);
+
+        AccountConfig accountConfig = new AccountConfig(MainActivityRecyclerView.this);
+
+        String [] accounts = accountConfig.getAccountIDArray();
+        for (String account: accounts){
+            if(!account.isEmpty()){
+                Log.i("SERC Log", "Current Account ID:" + account);
+            }
+        }
 
 
 
@@ -174,6 +202,19 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener(){
             @Override
             public void onRefresh(){
+
+                AccountConfig accountConfig = new AccountConfig(MainActivityRecyclerView.this);
+                String newID = accountConfig.addAccount();
+
+                Log.i("SERC Log", "New account ID:" + newID);
+
+                String [] accounts = accountConfig.getAccountIDArray();
+                for (String account: accounts){
+                    if(!account.isEmpty()){
+                        Log.i("SERC Log", "Existing Account ID:" + account);
+                    }
+                }
+
                 swipeRefreshLayout.setRefreshing(true);
 
                 // Calls the refresh content method defined within this class
@@ -191,6 +232,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
 
     }
+
+
+
 
 
     // Creates the menu from the xml layout
@@ -254,6 +298,8 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
                     snackbar.show();
 
+                    return true;
+
 
                 }
                 // Show live data
@@ -286,12 +332,44 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
                     snackbar.show();
 
+                    return true;
 
                 }
+
+
+            case(R.id.remove_account):
+                AccountConfig accountConfig = new AccountConfig(getBaseContext());
+                String [] accounts = accountConfig.getAccountIDArray();
+                if (!accounts[0].isEmpty()) {
+                    Log.i("SERC Log", "Removing A/c with ID: " + accounts[0] );
+                    accountConfig.removeAccount(accounts[0]);
+                }
+
+                accounts = accountConfig.getAccountIDArray();
+                for (String acc: accounts){
+                    if(!acc.isEmpty()){
+                        Log.i("SERC Log", "Existing Account ID:" + acc);
+                    }
+                }
+
+
+
+                return true;
+
+            case (R.id.show_ac_list):
+                SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                String allAccountIDs = appSettings.getString("emon_acc_ID_list", "");
+                Log.i("SERC Log", allAccountIDs);
+
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+
         }
 
 
-        return super.onOptionsItemSelected(item);
+        //return super.onOptionsItemSelected(item);
     }
 
 
@@ -684,10 +762,10 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         }
 
         // Logging entries in the list
-        Log.i("SERC Log:", "selected_station_list size: "+ String.valueOf(recordingStationsInSettings.size()));
+        /*Log.i("SERC Log:", "selected_station_list size: "+ String.valueOf(recordingStationsInSettings.size()));
         for (int i=0; i<recordingStationsInSettings.size(); i++){
             Log.i("SERC Log:", "selected_station_list " + String.valueOf(i) + ": "+ String.valueOf(recordingStationsInSettings.toArray()[i]));
-        }
+        }*/
 
         ArrayList<RecordingStation> recordingStationsForAdapter = new ArrayList<>();
         for (String nameTag:recordingStationsInSettings){
@@ -746,11 +824,10 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     }
 
     private void setUpSteps(String output) throws JSONException {
-        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
-        ArrayList<RecordingStation> recordingStations = new ArrayList<>();
 
         // Get list of RecordingStation objects from response
-        recordingStations = jsonToRecordingStationList(output);
+        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
+        ArrayList<RecordingStation> recordingStations = jsonToRecordingStationList(output);
 
         // Get subset of locations for settings
         ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations);

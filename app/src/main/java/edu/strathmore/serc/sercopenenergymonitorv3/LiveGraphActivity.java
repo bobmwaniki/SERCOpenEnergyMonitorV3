@@ -55,6 +55,7 @@ public class LiveGraphActivity extends AppCompatActivity {
     // Graph
     private LineChart lineChart;
     private Long timeBack = 600000L;
+    private long buttonPressed = 0l;
     //private int leftOffset = 0;
 
     // Repetitive liveData
@@ -111,7 +112,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Get LineChart
         lineChart = (LineChart) findViewById(R.id.full_page_live_graph);
 
-        // Draw the graph for on lauch
+        // Draw the graph for on launch
         generateStartAndEndTime();
         setLink();
         drawLiveGraph(link);
@@ -119,21 +120,6 @@ public class LiveGraphActivity extends AppCompatActivity {
         // Start repeating task
         mHandler = new Handler();
         startRepeatingTask();
-
-       /* FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab) ;
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                *//*generateStartAndEndTime();
-                setLink();
-                refreshLiveGraphData();*//*
-
-                //timerHandler.postDelayed(timerRunnable, fetchInterval);
-
-                mHandler = new Handler();
-                startRepeatingTask();
-            }
-        });*/
 
 
         // OnClickListeners for the buttons on top of the graph
@@ -148,6 +134,7 @@ public class LiveGraphActivity extends AppCompatActivity {
         oneHourBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonPressed = minutesToMilliseconds(60);
                 redrawGraphForUserTimeBack(60);
             }
         });
@@ -316,6 +303,14 @@ public class LiveGraphActivity extends AppCompatActivity {
                             Log.i("SERC Log", "New entry added: " + latestEntries.get(j).toString());
                         }
                         currentLineData.notifyDataChanged(); // Notify LineData of the changes
+
+                        /*SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                        long reference_timestamp = appSettings.getLong("reference_timestamp",0L);*/
+                        /*for (int k=1; k<latestEntries.size();k++){
+
+                        }*/
+
+
 
                         // Remove the oldest entries according to how many Entry objects have been added.
                         // This ensures that the number of data points in the graph remain the same

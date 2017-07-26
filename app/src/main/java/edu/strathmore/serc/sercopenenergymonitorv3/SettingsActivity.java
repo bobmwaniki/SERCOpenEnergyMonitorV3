@@ -346,6 +346,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
     }
 
+
+
     /**
      * This fragment shows account preferences only. It is used when the
      * activity is showing a two-pane settings UI.
@@ -357,6 +359,50 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_account);
             setHasOptionsMenu(true);
+
+            Context context = getActivity().getBaseContext();
+
+            Intent openAccountList = new Intent(context, AccountList.class);
+            startActivity(openAccountList);
+
+            /*
+
+            Preference addAccount = findPreference("add_account_button");
+            addAccount.setLayoutResource(R.layout.add_account);
+            addAccount.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+
+                    Intent showAccountDetails = new Intent(getActivity().getBaseContext(), AccountSettings.class);
+                    showAccountDetails.putExtra("new_account", true);
+                    startActivity(showAccountDetails);
+
+                    return true;
+                }
+            });
+
+
+
+
+
+            Preference accountList = findPreference("add_account_list");
+            accountList.setLayoutResource(R.layout.account_list);
+
+
+            AccountConfig accountConfig = new AccountConfig(context);
+            ArrayList<Account> accounts = accountConfig.getAllAccounts();
+
+            for (int i=0; i<accounts.size(); i++){
+                Log.i("Accounts List", "Names: " + accounts.get(i).getAccountName());
+            }
+
+            View accountsListView = getActivity().getLayoutInflater().inflate(R.layout.account_list, null);
+            ListView listView = (ListView) accountsListView.findViewById(R.id.account_list_list_view);
+            AccountListAdapter adapter = new AccountListAdapter(context, accounts);
+            listView.setAdapter(adapter);*/
+
+
+
         }
 
 
@@ -371,6 +417,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         }
 
     }
+
+
+
+
+
+
 
     /**
      * This fragment shows notification preferences only. It is used when the

@@ -25,22 +25,22 @@ public class HelpActivity extends AhoyOnboarderActivity {
 
 
         AhoyOnboarderCard ahoyOnboarderCard1 = new AhoyOnboarderCard("Welcome",
-                "This app is has been created to monitor energy use remotely for multiple locations using the EmonCMS platform",
+                "This app is has been created to monitor energy use remotely for multiple locations using the Emoncms platform",
                 R.drawable.lightning_icon);
         AhoyOnboarderCard ahoyOnboarderCard2 = new AhoyOnboarderCard("Current Data",
-                "To get the most current reading, swipe down to refresh the data",
+                "To get the most current reading: \nSwipe down to refresh the data\nOR\nActivate live data mode",
                 R.drawable.swipe_down_illust_2);
         AhoyOnboarderCard ahoyOnboarderCard3 = new AhoyOnboarderCard("Graph",
-                "To access a graph of the readings for a particular location, click on that location",
+                "Click on any location to access its historical or live graph",
                 R.drawable.easel_icon);
         AhoyOnboarderCard ahoyOnboarderCard4 = new AhoyOnboarderCard("Account",
-                "In order to communicate with the platform, you will be requested to provide some information",
+                "Please note that in order to communicate with the platform, you will be requested to provide some information",
                 R.drawable.color_profile_icon);
         AhoyOnboarderCard ahoyOnboarderCard5 = new AhoyOnboarderCard("API Key",
-                "The first is the READ API key, which can be found by logging into your EmonCms Platform under \'My Account\'",
+                "The first is the READ API key, which can be found by logging into your Emoncms account under \'My Account\'",
                 R.drawable.key_icon);
         AhoyOnboarderCard ahoyOnboarderCard6 = new AhoyOnboarderCard("Root Link",
-                "The second is the root HTTP link for where the platform is hosted",
+                "The second is the HTTP/HTTPS link for your server where the platform is hosted",
                 R.drawable.web_http_icon);
         AhoyOnboarderCard ahoyOnboarderCard7 = new AhoyOnboarderCard("More Info",
                 "To access the settings, click on the 3 dot menu on the top right of the main screen",

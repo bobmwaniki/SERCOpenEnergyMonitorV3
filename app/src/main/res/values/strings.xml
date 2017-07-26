@@ -29,7 +29,6 @@
     <string name="pref_general_switch_name_tag_summary">If turned on, the Location name and tag will switch position on the main screen</string>
 
 
-
     <string-array name="pref_example_list_titles">
         <item>Every second</item>
         <item>Every 2 seconds</item>
@@ -209,7 +208,6 @@
         <item>3</item>
 
 
-
     </string-array>
 
 
@@ -387,7 +385,7 @@
     <string name="pref_graph_x_axis_time_date_title">Date format on X Axis</string>
     <string name="pref_live_graph_smooth_line_summary">If turned on, the line that passes through
         all the data points will be smooth rather that a straight line cnnnecting each point</string>
-
+    <string name="title_activity_account_settings">AccountSettings</string>
 
 
 </resources>

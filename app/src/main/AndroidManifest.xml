@@ -76,6 +76,14 @@
             android:name=".LiveGraphActivity"
             android:label="@string/title_activity_live_graph"
             android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".AccountSettings"
+            android:label="@string/title_activity_account_settings"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".AccountList"
+            android:label="Available Accounts"
+            />
     </application>
 
 </manifest>
