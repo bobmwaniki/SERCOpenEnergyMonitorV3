@@ -1,5 +1,8 @@
 package edu.strathmore.serc.sercopenenergymonitorv3;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Created by Bob on 19/07/2017.
  */
@@ -9,6 +12,7 @@ public class Account {
     private String mAccountName;
     private String mApikey;
     private String mRootLink;
+    private Set<String> mStationList = Collections.emptySet();
 
     // Constructor
     public Account(String accountID, String accountName, String apiKey, String rootLink){
@@ -34,6 +38,8 @@ public class Account {
 
     public String getRootLink(){return mRootLink;}
 
+    public Set<String> getStationList(){return mStationList;}
+
 
     // Setter methods
 
@@ -45,6 +51,7 @@ public class Account {
 
     public void setRootLink(String rootLink){mRootLink = rootLink;}
 
+    public void setStationList(Set<String> stationList){mStationList = stationList;}
 
 
 

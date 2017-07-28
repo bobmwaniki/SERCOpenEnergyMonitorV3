@@ -24,6 +24,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -226,7 +227,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             recordingStationsSet = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
             recordingStationsFullSet = appSettings.getStringSet("full_station_list", Collections.<String>emptySet());
 
-
+            AccountConfig accountConfig = new AccountConfig(getActivity().getBaseContext());
+            ArrayList<Account> accounts = accountConfig.getAllAccounts();
+            for (Account account:accounts){
+                if (!account.getStationList().isEmpty()) {
+                    recordingStationsFullSet.addAll(account.getStationList());
+                }
+            }
 
             // Ensuring both sets are of the same size
             if (recordingStationsSet.size() < recordingStationsFullSet.size()) {
@@ -275,7 +282,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             stationMultiSelect.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    Log.i("SERC Log:", "selected_station_list setOnPreferenceChangeListener triggered ");
 
                     // Edit the SharePreferences as well
                     SharedPreferences.Editor editor = appSettings.edit();
@@ -360,23 +366,25 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_account);
             setHasOptionsMenu(true);
 
-            Context context = getActivity().getBaseContext();
+            final Context context = getActivity().getBaseContext();
 
-            Intent openAccountList = new Intent(context, AccountList.class);
-            startActivity(openAccountList);
 
-            /*
 
-            Preference addAccount = findPreference("add_account_button");
-            addAccount.setLayoutResource(R.layout.add_account);
-            addAccount.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+
+            MultiSelectListPreference chosenAccounts = (MultiSelectListPreference) findPreference("pref_selected_accounts");
+            //setUpMultiSelectPreference();
+
+            chosenAccounts.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceClick(Preference preference) {
-
-                    Intent showAccountDetails = new Intent(getActivity().getBaseContext(), AccountSettings.class);
-                    showAccountDetails.putExtra("new_account", true);
-                    startActivity(showAccountDetails);
-
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getActivity().getBaseContext());
+                    SharedPreferences.Editor editor = appSettings.edit();
+                    editor.putStringSet("selected_account_list", (Set<String>) newValue);
+                    for (String id:(Set<String>) newValue) {
+                        Log.i("SERC Log", "Saved account id: " + id);
+                    }
+                    // Apply the settings
+                    editor.apply();
                     return true;
                 }
             });
@@ -385,26 +393,64 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
 
 
-            Preference accountList = findPreference("add_account_list");
-            accountList.setLayoutResource(R.layout.account_list);
+            // Show the add account button
+            Preference addAccount = findPreference("add_account_button");
+            addAccount.setLayoutResource(R.layout.add_account);
+            addAccount.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
 
+                    Intent showAccountDetails = new Intent(context, AccountSettings.class);
+                    showAccountDetails.putExtra("new_account", true);
+                    startActivity(showAccountDetails);
 
-            AccountConfig accountConfig = new AccountConfig(context);
-            ArrayList<Account> accounts = accountConfig.getAllAccounts();
+                    return true;
+                }
+            });
 
-            for (int i=0; i<accounts.size(); i++){
-                Log.i("Accounts List", "Names: " + accounts.get(i).getAccountName());
-            }
+            // Add open Accounts list page on button press
+            Preference showAllAccounts = findPreference("show_account_list");
+            showAllAccounts.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
 
-            View accountsListView = getActivity().getLayoutInflater().inflate(R.layout.account_list, null);
-            ListView listView = (ListView) accountsListView.findViewById(R.id.account_list_list_view);
-            AccountListAdapter adapter = new AccountListAdapter(context, accounts);
-            listView.setAdapter(adapter);*/
+                    Intent openAccountList = new Intent (context, AccountList.class);
+                    startActivity(openAccountList);
+
+                    return true;
+                }
+            });
 
 
 
         }
 
+        private void setUpMultiSelectPreference(){
+            MultiSelectListPreference accountMultiPref = (MultiSelectListPreference) findPreference("pref_selected_accounts");
+            AccountConfig accountConfig = new AccountConfig(getActivity().getBaseContext());
+            String[] accountIDs = accountConfig.getAccountIDArray();
+            int accountIDListSize = accountIDs.length;
+            // String sets to be used in the MultiSelectListPreference
+            String[] accountNames = new String[accountIDListSize];
+            // Fill the String array and Set with values
+            for (int i=0; i<accountIDListSize;i++){
+                if(!accountIDs[i].isEmpty()){
+                    // Get Account Name from ID
+                    accountNames[i] = accountConfig.getAccountFromID(accountIDs[i]).getAccountName();
+
+                }
+            }
+
+            accountMultiPref.setEntries(accountNames);
+            accountMultiPref.setEntryValues(accountIDs);
+        }
+
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            setUpMultiSelectPreference();
+        }
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {

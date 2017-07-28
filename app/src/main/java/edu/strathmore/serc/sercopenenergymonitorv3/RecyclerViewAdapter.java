@@ -128,26 +128,28 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     // Involves populating data into the item through holder
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        // Get the RecordingStation based on position
-        RecordingStation recordingStation = mRecordingStations.get(position);
+        if (mRecordingStations.size()>0) {
+            // Get the RecordingStation based on position
+            RecordingStation recordingStation = mRecordingStations.get(position);
 
-        // Set TextViews based on the attributes of the RecordingStation
-        TextView nameTV = holder.nameTextView;
-        TextView tagTV = holder.tagTextView;
-        TextView powerReadingTV = holder.powerReadingTextView;
+            // Set TextViews based on the attributes of the RecordingStation
+            TextView nameTV = holder.nameTextView;
+            TextView tagTV = holder.tagTextView;
+            TextView powerReadingTV = holder.powerReadingTextView;
 
-        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
-        boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
+            SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
+            boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
 
-        if (switchNameTag) {
-            tagTV.setText(recordingStation.getStationName());
-            nameTV.setText(recordingStation.getStationTag());
+            if (switchNameTag) {
+                tagTV.setText(recordingStation.getStationName());
+                nameTV.setText(recordingStation.getStationTag());
 
-        } else {
-            nameTV.setText(recordingStation.getStationName());
-            tagTV.setText(recordingStation.getStationTag());
+            } else {
+                nameTV.setText(recordingStation.getStationName());
+                tagTV.setText(recordingStation.getStationTag());
+            }
+            powerReadingTV.setText(String.valueOf(recordingStation.getStationValueReading()) + " W");
         }
-        powerReadingTV.setText(String.valueOf(recordingStation.getStationValueReading()) + " W");
 
     }
 

@@ -26,17 +26,25 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
     private boolean hasError = false;
     private boolean mForSwipeToRefresh  = false;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+    private Account mCurrentAccount = null;
 
     public interface AsyncResponse {
         void processFinish(String output) throws JSONException;
     }
 
-    public CmsApiCall(Context context, SwipeRefreshLayout swipeRefreshLayout, AsyncResponse delegate){
+    public CmsApiCall(Context context, SwipeRefreshLayout swipeRefreshLayout, Account account, AsyncResponse delegate){
         this.delegate = delegate;
         mContext = context;
         mSwipeRefreshLayout = swipeRefreshLayout;
-
+        mCurrentAccount = account;
         mForSwipeToRefresh = true;
+    }
+
+    public CmsApiCall(Context context, Account account, AsyncResponse delegate){
+        this.delegate = delegate;
+        mContext = context;
+        mForSwipeToRefresh = false;
+        mCurrentAccount = account;
     }
 
     public CmsApiCall(Context context, AsyncResponse delegate){
@@ -44,6 +52,7 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
         mContext = context;
         mForSwipeToRefresh = false;
     }
+
 
     @Override
     protected void onPreExecute() {
@@ -99,7 +108,11 @@ public class CmsApiCall extends AsyncTask<String, Void, String> {
         super.onPostExecute(s);
         if (hasError){
             // Alert user
-            Toast.makeText(mContext, "Error. Could not fetch data", Toast.LENGTH_SHORT).show();
+            if (mCurrentAccount != null) {
+                Toast.makeText(mContext, "Error. Could not fetch data from " + mCurrentAccount.getAccountName(), Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(mContext, "Error. Could not fetch data", Toast.LENGTH_SHORT).show();
+            }
             if (mForSwipeToRefresh) {
                 stopRefreshLayoutRefreshing();
             }

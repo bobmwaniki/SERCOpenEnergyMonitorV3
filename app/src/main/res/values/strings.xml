@@ -275,6 +275,14 @@
     <string name="pref_edit_root_link_summary">The URL of where the EMONCms platform is hosted</string>
 
 
+    <string-array name="pref_selected_accounts_values">
+
+    </string-array>
+    <string-array name="pref_selected_accounts_entries">
+
+    </string-array>
+
+
     <!-- Example settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>
 
@@ -376,6 +384,9 @@
     <string-array name="pref_station_list_values">
 
     </string-array>
+
+
+
     <string name="title_activity_graph_tabbed">Graph Page</string>
     <string name="section_format">Hello World from section: %1$d</string>
 
@@ -385,7 +396,7 @@
     <string name="pref_graph_x_axis_time_date_title">Date format on X Axis</string>
     <string name="pref_live_graph_smooth_line_summary">If turned on, the line that passes through
         all the data points will be smooth rather that a straight line cnnnecting each point</string>
-    <string name="title_activity_account_settings">AccountSettings</string>
+    <string name="title_activity_account_settings">Account Settings</string>
 
 
 </resources>

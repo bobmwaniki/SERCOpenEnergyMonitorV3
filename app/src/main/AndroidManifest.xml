@@ -79,11 +79,24 @@
         <activity
             android:name=".AccountSettings"
             android:label="@string/title_activity_account_settings"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".AccountList">
+            <!-- Parent activity meta-data to support 4.0 and lower -->
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="edu.strathmore.serc.sercopenenergymonitorv3.AccountList" />
+
+            </activity>
         <activity
             android:name=".AccountList"
             android:label="Available Accounts"
-            />
+            android:parentActivityName=".SettingsActivity">
+            <!-- Parent activity meta-data to support 4.0 and lower -->
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="edu.strathmore.serc.sercopenenergymonitorv3.SettingsActivity" />
+
+        </activity>
     </application>
 
 </manifest>

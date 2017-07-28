@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -127,9 +129,21 @@ public class AccountConfig {
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
         SharedPreferences.Editor editor = appSettings.edit();
 
-        String apiKey_key = PREF_ACCOUNT_PREFIX + accountID + "_rootLink";
+        String rootLink_key = PREF_ACCOUNT_PREFIX + accountID + "_rootLink";
 
-        editor.putString(apiKey_key, rootLink);
+        editor.putString(rootLink_key, rootLink);
+        editor.apply();
+
+    }
+
+    public void setStationListInSettings(String accountID, Set<String> stationList){
+
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
+        SharedPreferences.Editor editor = appSettings.edit();
+
+        String stationList_key = PREF_ACCOUNT_PREFIX + accountID + "_stationList";
+
+        editor.putStringSet(stationList_key, stationList);
         editor.apply();
 
     }
@@ -172,6 +186,7 @@ public class AccountConfig {
         String accountName = "";
         String apiKey = "";
         String rootLink = "";
+        Set<String> stationsSet = Collections.emptySet();
         // For each setting
         for(Map.Entry<String,?> entry:appSettingsAll.entrySet()) {
             // If UUID matches
@@ -189,12 +204,18 @@ public class AccountConfig {
                 if(entry.getKey().contains("rootLink")){
                     rootLink = entry.getValue().toString();
                 }
+                // Get Account's list of available stations
+                if(entry.getKey().contains("stationList")){
+                    stationsSet = (Set<String>) entry.getValue();
+                }
 
             }
 
         }
 
-        return new Account(accountID, accountName, apiKey, rootLink);
+        Account account = new Account(accountID, accountName, apiKey, rootLink);
+        account.setStationList(stationsSet);
+        return account;
 
     }
 

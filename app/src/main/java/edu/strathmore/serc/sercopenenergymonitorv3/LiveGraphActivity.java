@@ -85,6 +85,8 @@ public class LiveGraphActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        String accountID = "";
+
         //Getting data from received intent to start GraphActivity
         Bundle extras = getIntent().getExtras();
         // Checks that there are extras in the intent
@@ -92,6 +94,10 @@ public class LiveGraphActivity extends AppCompatActivity {
             stationID = extras.getInt("Station_ID");
             stationTag = extras.getString("Station_tag");
             stationName = extras.getString("Station_name");
+            accountID = extras.getString("Account_ID");
+            Log.i("StationExtras in intent", "Station_ID" + String.valueOf(stationID) +
+                    " Station_Tag: " + String.valueOf(stationTag)+ " Station_Name: " + String.valueOf(stationName)
+                    + "Account_ID: " + accountID);
         }
 
         TextView bottomText = (TextView) findViewById(R.id.live_graph_bottom_textview);
@@ -101,8 +107,10 @@ public class LiveGraphActivity extends AppCompatActivity {
 
         // Get root link, API key and interval from settings
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
-        ROOT_LINK = appSettings.getString("root_link_editpref", "");
-        API_KEY = appSettings.getString("api_key_edit","");
+        AccountConfig accountConfig = new AccountConfig(getBaseContext());
+        Account account = accountConfig.getAccountFromID(accountID);
+        ROOT_LINK = account.getRootLink();
+        API_KEY = account.getApiKey();
         interval = appSettings.getString("pref_interval", "900");
 
         // Get the fetch interval from settings

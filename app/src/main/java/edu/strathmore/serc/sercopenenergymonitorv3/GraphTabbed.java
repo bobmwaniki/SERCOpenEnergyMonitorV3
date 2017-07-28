@@ -171,14 +171,8 @@ public class GraphTabbed extends AppCompatActivity {
 
 
 
-        // Get API Key and Root Link from settings
-        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
-        ROOT_LINK = appSettings.getString("root_link_editpref", "");
-        ROOT_LINK = ROOT_LINK + "feed/data.json?id=";
-        API_KEY = appSettings.getString("api_key_edit","");
 
-        //Get interval from settings
-        interval = appSettings.getString("pref_interval", "900");
+        String accountID = "";
 
         //Getting data from received intent to start GraphActivity
         Bundle extras = getIntent().getExtras();
@@ -187,9 +181,28 @@ public class GraphTabbed extends AppCompatActivity {
             stationID = extras.getInt("Station_ID");
             stationTag = extras.getString("Station_tag");
             stationName = extras.getString("Station_name");
+            accountID = extras.getString("Account_ID");
             Log.i("StationExtras in intent", "Station_ID" + String.valueOf(stationID) +
-                    "Station_Tag" + String.valueOf(stationTag)+"Station_Name" + String.valueOf(stationName));
+                    " Station_Tag: " + String.valueOf(stationTag)+ " Station_Name: " + String.valueOf(stationName)
+                    + "Account_ID: " + accountID);
         }
+
+        // Get API Key and Root Link from settings
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
+        AccountConfig accountConfig = new AccountConfig(getBaseContext());
+        Account account = accountConfig.getAccountFromID(accountID);
+        ROOT_LINK = account.getRootLink() + "feed/data.json?id=";
+        Log.i("SERC Log", "Link: " + ROOT_LINK);
+        API_KEY = account.getApiKey();
+        Log.i("SERC Log", "API: " + API_KEY);
+
+
+       /* ROOT_LINK = appSettings.getString("root_link_editpref", "");
+        ROOT_LINK = ROOT_LINK + "feed/data.json?id=";
+        API_KEY = appSettings.getString("api_key_edit","");*/
+
+        //Get interval from settings
+        interval = appSettings.getString("pref_interval", "900");
 
 
         /* Setting today's date and time as default values when the calendar dialog first shows up

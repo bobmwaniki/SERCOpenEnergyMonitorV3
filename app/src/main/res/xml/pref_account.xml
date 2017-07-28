@@ -1,7 +1,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
 
-    <EditTextPreference
+    <!--<EditTextPreference
         android:defaultValue="0"
         android:inputType="textNoSuggestions"
         android:key="api_key_edit"
@@ -19,7 +19,7 @@
         android:singleLine="true"
         android:summary="@string/pref_edit_root_link_summary"
         android:title="@string/pref_edit_root_link_title"
-        />
+        />-->
 
 
 
@@ -27,10 +27,21 @@
         android:key="preference_container"
         android:title="Accounts">
 
+        <MultiSelectListPreference
+            android:key="pref_selected_accounts"
+            android:title="Select Accounts"
+            android:summary="Select the accounts that will be shown on the main screen"
+            android:entries="@array/pref_selected_accounts_entries"
+            android:entryValues="@array/pref_selected_accounts_values"
+
+            />
+
 
         <Preference
-            android:key="add_account_list"
-            android:widgetLayout="@layout/account_list"
+            android:key="show_account_list"
+            android:title="Edit Accounts"
+            android:summary="Shows all the available accounts with options to edit or delete"
+
 
             />
 

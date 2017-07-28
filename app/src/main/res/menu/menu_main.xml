@@ -32,19 +32,26 @@
         android:checkable="true"
         />
 
-    <item
-        android:id="@+id/remove_account"
+    <!--<item
+        android:id="@+id/save_old_account"
         android:orderInCategory="1300"
-        android:title="Remove account"
+        android:title="Save old Account"
         app:showAsAction="never"
         />
-
+-->
     <item
         android:id="@+id/show_ac_list"
         android:orderInCategory="1300"
         android:title="Show Account List"
         app:showAsAction="never"
         />
+
+    <!--<item
+        android:id="@+id/add_textview"
+        android:orderInCategory="1310"
+        android:title="Add TextView"
+        app:showAsAction="never"
+        />-->
 
 
 

@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -26,6 +27,8 @@ public class AccountList extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.account_list);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
         AccountConfig accountConfig = new AccountConfig(this);
@@ -69,6 +72,28 @@ public class AccountList extends AppCompatActivity {
         adapter.clear();
         adapter.addAll(accounts);
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        switch (id){
+
+            // Respond to the action bar's Up/Home button
+            case android.R.id.home:
+                finish();
+                return true;
+
+
+
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+
     }
 
     @Override
