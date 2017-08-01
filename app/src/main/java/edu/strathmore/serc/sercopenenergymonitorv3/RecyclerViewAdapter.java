@@ -20,8 +20,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     // Member variable for the list of RecordingStation objects
     ArrayList<RecordingStation> mRecordingStations;
-    // Member variable to keep track of the number of objects in adapter
-    private int numberOfRecordingStations;
+
     // Storing context for easy access
     Context mContext;
 
@@ -107,7 +106,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public RecyclerViewAdapter(Context context, ArrayList<RecordingStation> recordingStations){
         mContext = context;
         mRecordingStations = recordingStations;
-        numberOfRecordingStations = recordingStations.size();
+
     }
 
     // Usually involves inflating a layout from XML and returning the holder
@@ -167,16 +166,24 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     * The following 3 classes are used to help clear and load new data to the adapter
     */
     // Clear all elements of the recycler
-    public void clear(){
+    public void smoothClear(){
+        int size = mRecordingStations.size();
         mRecordingStations.clear();
-        for (int i=0; i<numberOfRecordingStations; i++){
+
+        for (int i=0; i<size; i++){
             notifyItemRemoved(i);
         }
+
+    }
+
+    public void clear(){
+        mRecordingStations.clear();
+        notifyDataSetChanged();
+
     }
     // Add list of items
     public void addAll(ArrayList<RecordingStation> recordingStations){
-        numberOfRecordingStations = recordingStations.size();
-        for (int i=0; i<numberOfRecordingStations; i++){
+        for (int i=0; i<recordingStations.size(); i++){
 
             mRecordingStations.add(recordingStations.get(i));
             notifyItemChanged(i);
@@ -184,10 +191,19 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     }
 
-    public void notifyMassDataChange(ArrayList<RecordingStation> recordingStations){
-        mRecordingStations.clear();
-        mRecordingStations = recordingStations;
-        notifyDataSetChanged();
+    public void notifyMassDataChange(ArrayList<RecordingStation> recordingStations, boolean clearScreen){
+        if (clearScreen) {
+            mRecordingStations.clear();
+            mRecordingStations = recordingStations;
+            notifyDataSetChanged();
+        }
+        else {
+            for(RecordingStation station:recordingStations){
+                mRecordingStations.add(station);
+            }
+            notifyDataSetChanged();
+        }
+
     }
 
 

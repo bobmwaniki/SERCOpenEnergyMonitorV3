@@ -92,6 +92,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     // For snackbar
     CoordinatorLayout coordinatorLayout;
 
+    private TextView noAccountFoundTextView;
 
 
 
@@ -190,6 +191,19 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
         timerHandler = new Handler();
 
+        noAccountFoundTextView = (TextView) findViewById(R.id.no_account_found);
+
+        Set<String> recordingStationsInSettings = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
+
+        if (recordingStationsInSettings.isEmpty()) {
+            noAccountFoundTextView.setVisibility(View.VISIBLE);
+            noAccountFoundTextView.setText("No locations chosen. Please choose a location to display in settings");
+        } else {
+            noAccountFoundTextView.setVisibility(View.GONE);
+        }
+
+        // Set up the locations in the main screen
+        setUpLocationsForMainScreen(false, true);   //--> Moved to on resume
 
 
         // onClick Listener for Swiping up to refresh feed. Calls the refreshContent method
@@ -209,15 +223,11 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         });
 
 
-        // Set up the locations in the main screen
-        setUpLocationsForMainScreen(false, true);
-
-
 
     }
 
 
-    private void setUpAccount(){
+    private void setUpOldAccount(){
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String api = appSettings.getString("api_key_edit", null);
         String link = appSettings.getString("root_link_editpref", null);
@@ -234,11 +244,12 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         accountConfig.saveAccountDetailsInSettings(account);
     }
 
-
+    // Refresh the data if the user navigates to this Activity from elsewhere (or if the app has
+    // been inactive for a while and the app is paused)
     @Override
-    protected void onRestart() {
-        super.onRestart();
-        setUpLocationsForMainScreen(false, true);
+    protected void onResume() {
+        super.onResume();
+        //setUpLocationsForMainScreen(false, true);
     }
 
     // Creates the menu from the xml layout
@@ -345,13 +356,13 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 setUpAccount();
                 return true;*/
 
-            case (R.id.show_ac_list):
+           /* case (R.id.show_ac_list):
                 AccountConfig config = new AccountConfig(getBaseContext());
                 String [] accountList = config.getAccountIDArray();
                 for (String accountID:accountList){
                     Log.i("SERC Log", "ID: " + accountID);
                 }
-                return true;
+                return true;*/
 
             /*case (R.id.add_textview):
                 LayoutInflater inflater = getLayoutInflater();
@@ -389,15 +400,9 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         // Removes all spaces
         String trimedLinkToFix = linkToFix.replace(" ","");
 
-        // Gets the API key from settings (Shared Preferences)
-        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = appSettings.edit();
-
         // Adds a "/" if it is not the last character in the link
         if (!trimedLinkToFix.matches(".*[/]")){
             mFixedString = trimedLinkToFix + "/";
-            editor.putString("root_link_editpref", mFixedString);
-            editor.apply();
         }
         // Checks if the link starts with https:// or http:// and adds it if not
         if (trimedLinkToFix.startsWith("https://") || trimedLinkToFix.startsWith("http://")){
@@ -405,14 +410,13 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         }
         else {
             mFixedString = "https://" + trimedLinkToFix;
-            editor.putString("root_link_editpref", mFixedString);
-            editor.apply();
+
         }
 
         return mFixedString;
     }
 
-    // Pop on LongPress
+    // Pop-up on LongPress on a location
     public static class LocationDetails extends DialogFragment{
         @NonNull
         @Override
@@ -522,7 +526,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
             final SharedPreferences.Editor editor = prefs.edit();
-            builder.setTitle("No Account Found")
+            builder.setTitle("No Account Info Found")
                     .setMessage("SERC Energy Monitor v.4.0 now supports multiple accounts from different emoncms servers.\n\n" +
                             "No account information was found on this device. Would you like to set up a new Account?")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -533,7 +537,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                             editor.apply();
                             // Go to account set up page
                             Intent startAccountSettings = new Intent(getContext(), AccountSettings.class);
-                            startAccountSettings.putExtra("new_account", true);
+                            startAccountSettings.putExtra("no_account_found", true);
                             startActivity(startAccountSettings);
 
                         }
@@ -584,7 +588,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // Create new account
-                            ((MainActivityRecyclerView)getActivity()).setUpAccount();
+                            ((MainActivityRecyclerView)getActivity()).setUpOldAccount();
                             editor.putBoolean("old_account_dialog_shown", true);
                             editor.apply();
                             dialog.dismiss();
@@ -776,277 +780,92 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         }
     }
 
-    // Method that gets the JSON String from the emoncms server and transforms it into an ArrayList
-    // of RecordingStation objects
-    public ArrayList<RecordingStation> jsonToRecordingStationList(String jsonText) throws JSONException {
-
-        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
-        ArrayList<RecordingStation> recordingStations = new ArrayList<>();
-
-        // This changes the JSON String into a JSON object. The response for this call consists of
-        // one JSON array with individual objects for each node added to the Emon CMS platform
-        JSONArray parentJSON = new JSONArray(jsonText);
-        JSONObject childJSON;
-
-        if (parentJSON.length()>0) {
-            // Cycles through all objects within the JSON array
-            for (int i=0; i<parentJSON.length(); i++){
-
-                // Initialising the variables needed for the RecordingStation constructor
-                int id =0;
-                String name="";
-                String tag="";
-                int time=0;
-                int powerReading=0;
-
-                // Setting childJSON as an object in the JSON array at position i
-                childJSON = parentJSON.getJSONObject(i);
-
-                //Checks if ID field exists and is not null
-                if (childJSON.has("id") && !childJSON.isNull("id")){
-                    id = childJSON.getInt("id");
-                }
-                //Checks if name field exists and is not null
-                if (childJSON.has("name") && !childJSON.isNull("name")){
-                    name = childJSON.getString("name");
-                }
-                //Checks if tag field exists and is not null
-                if (childJSON.has("tag") && !childJSON.isNull("tag")){
-                    tag = childJSON.getString("tag");
-                }
-                //Checks if time field exists and is not null
-                if (childJSON.has("time") && !childJSON.isNull("time")){
-                    time = childJSON.getInt("time");
-                }
-                //Checks if value field exists and is not null
-                if (childJSON.has("value") && !childJSON.isNull("value")){
-                    powerReading = childJSON.getInt("value");
-                }
-
-                //Creating new RecordingStation object with the values and adding it to the ArrayList for each loop
-                RecordingStation recordingStation = new RecordingStation(id, name, tag, time, powerReading);
-                recordingStations.add(recordingStation);
-
-            }
-        }
-
-        return recordingStations;
-    }
-
-    // Gets the subset of Recording Stations in selected in settings from the full list supplied to it
-    public ArrayList<RecordingStation> getRecordingStationsInSettings(ArrayList<RecordingStation> recordingStations, Account account){
-        if (recordingStations.size()>0) {
-            SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
-
-
-        /* This function takes in an array list of the recording stations and returns an array list
-         * of recording stations which is a subset of the of the input. This subset contains all the
-         * recording stations contained within the setting preferences
-         */
-            Set<String> recordingStationsInSettings = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
-            Set<String> chosenRecordingStations = new HashSet<>();
-
-
-            // Creates an array list of names of the stations in the form "TAG - NAME"
-            ArrayList<String> recordingStationNames = new ArrayList<>();
-            for (int i=0; i<recordingStations.size(); i++){
-                recordingStationNames.add(recordingStations.get(i).getStationTag() + " - " + recordingStations.get(i).getStationName());
-            }
-
-            // Sort List Alphabetically
-            Collections.sort(recordingStationNames, String.CASE_INSENSITIVE_ORDER);
-
-            // Adds these names to a new String Array List to chosenRecordingStations
-            chosenRecordingStations.addAll(recordingStationNames);
-
-            AccountConfig accountConfig = new AccountConfig(getBaseContext());
-            accountConfig.setStationListInSettings(account.getAccountID(), chosenRecordingStations);
-
-            // Saves the "TAG-NAME" full list as the station list of the Current account (used later in the Settings Activity
-            SharedPreferences.Editor editor = appSettings.edit();
-        /*editor.putStringSet("full_station_list", chosenRecordingStations);
-        editor.apply();*/
-
-            // Adds full list in case selected list is empty e.g. on first launch. Otherwise it would be
-            // a blank screen and the user would have to go to settings and select which locations to appear
-        /*if (recordingStationsInSettings.isEmpty()) {
-            editor.putStringSet("selected_station_list", chosenRecordingStations);
-            editor.apply();
-        }*/
-
-            // Logging entries in the list
-        /*Log.i("SERC Log:", "selected_station_list size: "+ String.valueOf(recordingStationsInSettings.size()));
-        for (int i=0; i<recordingStationsInSettings.size(); i++){
-            Log.i("SERC Log:", "selected_station_list " + String.valueOf(i) + ": "+ String.valueOf(recordingStationsInSettings.toArray()[i]));
-        }*/
-
-            ArrayList<RecordingStation> recordingStationsForAdapter = new ArrayList<>();
-            for (String nameTag:recordingStationsInSettings){
-                for (int j = 0; j < recordingStations.size(); j++){
-                    String currentStn = recordingStations.get(j).getStationTag() + " - " + recordingStations.get(j).getStationName();
-
-                    if (nameTag.contains(currentStn)){
-                        recordingStationsForAdapter.add(recordingStations.get(j));
-
-                    }
-                }
-            }
-
-            return recordingStationsForAdapter;
-        } else {
-
-            return recordingStations;
-        }
-
-    }
-
     // Main method that sets up all the cards in the main screen
-    public void setUpLocationsForMainScreen(boolean forSwipeToRefresh, final boolean firstTimeLaunch){
+    public void setUpLocationsForMainScreen(boolean forSwipeToRefresh, boolean firstTimeLaunch){
         // Get Root/API key from settings for each account
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
         AccountConfig accountConfig = new AccountConfig(getBaseContext());
         // Get the IDs of the selected accounts from settings
         Set<String> selectedAccounts = appSettings.getStringSet("selected_account_list", Collections.<String>emptySet());
 
-        Log.i("SERC A/c", "Is Empty: " + selectedAccounts.isEmpty());
+        //Log.i("SERC Log","");
 
         if (selectedAccounts.isEmpty()) {
+
+            noAccountFoundTextView.setVisibility(View.VISIBLE);
+            noAccountFoundTextView.setText("No Account Selected. Showing all accounts");
+
+
+            // If selected accounts is empty (like first launch), show all accounts
             ArrayList<Account> accounts = accountConfig.getAllAccounts();
-            for (final Account account:accounts){
-                //currentAccount = account;
-                rootLinkAddress = account.getRootLink();
-                rootLinkAddress = fixLink(rootLinkAddress);
-                apiKey = account.getApiKey();
 
-
-                // This checks if the the method has been called by the SwipeRefreshLayout and creates the
-                // appropriate constructor for it
-                if (forSwipeToRefresh) {
-                    // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
-                    new CmsApiCall(MainActivityRecyclerView.this, swipeRefreshLayout, account, new CmsApiCall.AsyncResponse() {
-                        @Override
-                        public void processFinish(String output) throws JSONException {
-                            setUpSteps(output, account, firstTimeLaunch);
-                        }
-                    }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
-
-
-                } else{
-
-                    // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
-                    new CmsApiCall(MainActivityRecyclerView.this, account, new CmsApiCall.AsyncResponse() {
-                        @Override
-                        public void processFinish(String output) throws JSONException {
-                            setUpSteps(output, account, firstTimeLaunch);
-                        }
-                    }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
-
+            for (int i = 0; i<accounts.size();i++) {
+                boolean lastAccount = false;
+                boolean clearScreen = false;
+                if (i == accounts.size()-1){
+                    lastAccount = true;
                 }
-
+                if (i==0){
+                    clearScreen = true;
+                }
+                apiCall(accounts.get(i), forSwipeToRefresh, firstTimeLaunch, lastAccount, clearScreen);
             }
         }
-        else{
+
+        else {
+            noAccountFoundTextView.setVisibility(View.GONE);
             ArrayList<Account> accounts = new ArrayList<>();
-            for (String accountID:selectedAccounts){
+            // Gets valid accounts from selected list
+            for (String accountID : selectedAccounts) {
                 if (!accountID.isEmpty()) {
                     Account account = accountConfig.getAccountFromID(accountID);
-                    Log.i("SERC Log", "Account Name: " + account.getAccountName()
-                            + "  ID: " + account.getAccountID());
+                    //Log.i("SERC Log", "Account Name: " + account.getAccountName() + "  ID: " + account.getAccountID());
                     if (!account.getAccountName().isEmpty()) {
                         accounts.add(account);
                     }
                 }
             }
 
-            for (final Account account:accounts){
-                //currentAccount = account;
-                rootLinkAddress = account.getRootLink();
-                rootLinkAddress = fixLink(rootLinkAddress);
-                apiKey = account.getApiKey();
-
-
-                // This checks if the the method has been called by the SwipeRefreshLayout and creates the
-                // appropriate constructor for it
-                if (forSwipeToRefresh) {
-                    // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
-                    new CmsApiCall(MainActivityRecyclerView.this, swipeRefreshLayout, account, new CmsApiCall.AsyncResponse() {
-                        @Override
-                        public void processFinish(String output) throws JSONException {
-                            setUpSteps(output, account, firstTimeLaunch);
-                        }
-                    }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
-
-
-                } else{
-
-                    // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
-                    new CmsApiCall(MainActivityRecyclerView.this, account, new CmsApiCall.AsyncResponse() {
-                        @Override
-                        public void processFinish(String output) throws JSONException {
-                            setUpSteps(output, account, firstTimeLaunch);
-                        }
-                    }).execute(rootLinkAddress+"feed/list.json&apikey="+apiKey);
-
+            //Log.i("SERC Log","Number of chosen accounts: " + accounts.size());
+            if (accounts.size()>0) {
+                for (int i = 0; i<accounts.size();i++) {
+                    boolean lastAccount = false;
+                    boolean clearScreen = false;
+                    if (i == accounts.size()-1){
+                        lastAccount = true;
+                    }
+                    if (i==0){
+                        clearScreen = true;
+                    }
+                    apiCall(accounts.get(i), forSwipeToRefresh, firstTimeLaunch, lastAccount, clearScreen);
                 }
+            } else if (accounts.size() == 0 && forSwipeToRefresh){
+                // Stops the refresh layout from spinning if no account is chosen
+                stopRefreshLayoutRefreshing();
+                noAccountFoundTextView.setVisibility(View.VISIBLE);
+                noAccountFoundTextView.setText("No Account Selected!");
 
+                if(adapter!=null){
+                    adapter.clear();
+                }
             }
 
 
+
         }
 
-       /* rootLinkAddress = appSettings.getString("root_link_editpref","");
-        // Make sure link is not malformed
-        rootLinkAddress = fixLink(rootLinkAddress);
-
-        apiKey = appSettings.getString("api_key_edit", "");
-        // Call CmsApiCall using the MainActivity as the context. The result is the JSON file in
-        // form of a continuous String. rootLinkAddress+"feed/list.json&apikey="+apiKey
-
-
-*/
 
     }
 
-    private void setUpSteps(String output, Account account, boolean firstTime) throws JSONException {
+    private void apiCall (final Account account, boolean forSwipeToRefresh, final boolean firstTimeLaunch, final boolean lastAccount,
+                          boolean clearScreen){
 
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
-        // Get list of RecordingStation objects from response
-
-        // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
-        ArrayList<RecordingStation> recordingStations = jsonToRecordingStationList(output);
-
-        // Get subset of locations for settings
-        ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations, account);
-
-        // Arranges the Stations alphabetically by tag name
-        final boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
-        if (recordingStationsForAdapter.size()>1){
-            Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
-                @Override
-                public int compare(RecordingStation o1, RecordingStation o2) {
-                    int comp;
-                    // If Preference is switched on, arrange by name first
-                    if (switchNameTag) {
-                        comp = o1.getStationName().compareTo(o2.getStationName());
-                        if (comp==0) {
-                            comp = o1.getStationTag().compareTo(o2.getStationTag());
-                        }
-                    } else {
-                        comp = o1.getStationTag().compareTo(o2.getStationTag());
-                        if (comp==0) {
-                            comp = o1.getStationName().compareTo(o2.getStationName());
-                        }
-                    }
-                    return comp;
-                }
-            });
-        }
-
-        // Checks if the activity is being launched or if it is a refresh
-        if (firstTime) {
+        if (firstTimeLaunch) {
+            Log.i("SERC Log","Running first time setup");
             // Binding the adapter to the RecyclerView
-            adapter = new RecyclerViewAdapter(MainActivityRecyclerView.this, recordingStationsForAdapter);
+            adapter = new RecyclerViewAdapter(getBaseContext(), new ArrayList<RecordingStation>());
             recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
             recyclerView.setAdapter(adapter);
 
@@ -1061,7 +880,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                 recyclerView.setLayoutManager(new LinearLayoutManager(MainActivityRecyclerView.this));
             }
 
-            // Set the animation from wasabeef's recycler-animator library
+            // Set the animation from wasabeef's recycler-animator library if animations are not disabled
             boolean disableAnimation = appSettings.getBoolean("pref_general_disable_animations", false);
             if (!disableAnimation) {
                 recyclerView.setItemAnimator(new SlideInUpAnimator());
@@ -1071,27 +890,266 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
 
 
-        } else{
+        }
 
-            boolean disableAnimations = appSettings.getBoolean("pref_general_disable_animations", false);
+        rootLinkAddress = account.getRootLink();
+        rootLinkAddress = fixLink(rootLinkAddress);
+        apiKey = account.getApiKey();
 
-            if (isShowingLive || disableAnimations) {
-                adapter.notifyMassDataChange(recordingStationsForAdapter);
+        if (rootLinkAddress.isEmpty()) {
+            Toast.makeText(getBaseContext(), "No Link found for " + account.getAccountName(),
+                    Toast.LENGTH_SHORT).show();
+        }
+        else if (apiKey.isEmpty()) {
+            Toast.makeText(getBaseContext(), "No API found for " + account.getAccountName(),
+                    Toast.LENGTH_SHORT).show();
+        }
+        else {
+            final boolean clear = clearScreen;
+
+            //Log.i("SERC Log","Clear Screen, for loop: " + clearScreen);
+
+            // This checks if the the method has been called by the SwipeRefreshLayout and creates the
+            // appropriate constructor for it
+            if (forSwipeToRefresh) {
+                //Log.i("SERC Log","Clear Screen, for loop/swipeRefresh: " + clear);
+
+                // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
+                new CmsApiCall(MainActivityRecyclerView.this, swipeRefreshLayout, account, new CmsApiCall.AsyncResponse() {
+                    @Override
+                    public void processFinish(String output) throws JSONException {
+                        setUpSteps(output, account, firstTimeLaunch, clear);
+                        if (lastAccount) {
+                            // Stops the indicator in the swipe to refresh layout from spinning
+                            stopRefreshLayoutRefreshing();
+                        }
+                    }
+                }).execute(rootLinkAddress + "feed/list.json&apikey=" + apiKey);
 
 
-            } else{
-                // Clear the adapter and load up new content to adapter
-                if (recordingStationsForAdapter.size()>0) {
-                    adapter.clear();
-                    adapter.addAll(recordingStationsForAdapter);
-                }
+            } else {
+
+                // Activity Done in the onPostExecute of the Asynctask to make sure the data is not out of sync
+                new CmsApiCall(MainActivityRecyclerView.this, account, new CmsApiCall.AsyncResponse() {
+                    @Override
+                    public void processFinish(String output) throws JSONException {
+                        //Log.i("SERC Log","Clear Screen, for loop/noSwipeRefresh: " + clear);
+                        setUpSteps(output, account, firstTimeLaunch, clear);
+                        if (lastAccount) {
+                            // Stops the indicator in the swipe to refresh layout from spinning
+                            stopRefreshLayoutRefreshing();
+                        }
+                    }
+                }).execute(rootLinkAddress + "feed/list.json&apikey=" + apiKey);
+
             }
 
         }
+    }
 
-        // Stops the indicator in the swipe to refresh layout from spinning
-        stopRefreshLayoutRefreshing();
+    private boolean lastAccountInList(Account account, ArrayList<Account> accounts){
+        return account.getAccountID() == accounts.get(accounts.size() - 1).getAccountID();
+    }
 
+    // Actual steps needed to set up the RecyclerView
+    private void setUpSteps(String output, Account account, boolean firstTime, boolean clearScreen) {
+
+        Log.i("SERC Log", "Clear Screen: " + clearScreen);
+
+
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+
+        // Get list of RecordingStation objects from response
+        ArrayList<RecordingStation> recordingStations = jsonToRecordingStationList(output);
+
+        // Get subset of those locations selected in settings
+        ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations, account, firstTime);
+
+
+        if (recordingStationsForAdapter.size()>0) {
+            // Arranges the Stations alphabetically by tag name
+            final boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
+            if (recordingStationsForAdapter.size()>1){
+                Collections.sort(recordingStationsForAdapter, new Comparator<RecordingStation>() {
+                    @Override
+                    public int compare(RecordingStation o1, RecordingStation o2) {
+                        int comp;
+                        // If Preference is switched on, arrange by name first
+                        if (switchNameTag) {
+                            comp = o1.getStationName().compareTo(o2.getStationName());
+                            if (comp==0) {
+                                comp = o1.getStationTag().compareTo(o2.getStationTag());
+                            }
+                        } else {
+                            comp = o1.getStationTag().compareTo(o2.getStationTag());
+                            if (comp==0) {
+                                comp = o1.getStationName().compareTo(o2.getStationName());
+                            }
+                        }
+                        return comp;
+                    }
+                });
+            }
+
+
+            boolean disableAnimations = appSettings.getBoolean("pref_general_disable_animations", false);
+
+            if (adapter!=null) {
+                if (isShowingLive || disableAnimations) {
+                    adapter.notifyMassDataChange(recordingStationsForAdapter, clearScreen);
+
+
+                } else{
+                    // Clear the adapter and load up new content to adapter
+
+                    if (recordingStationsForAdapter.size()>0) {
+                        //Log.i("SERC Log","Clear Screen, !firstLaunch with animations : " + clearScreen);
+                        if (clearScreen) {
+                            Log.i("SERC Log","Smooth Clear run");
+                            adapter.smoothClear();
+                        }
+                        adapter.addAll(recordingStationsForAdapter);
+                    }
+                    else if(clearScreen){
+                        Log.i("SERC Log","Basic Clear run");
+                        adapter.clear();
+                    }
+                }
+            }
+        }
+
+        else {
+            if(clearScreen){
+                adapter.clear();
+            }
+        }
+
+
+    }
+
+    // Method that gets the JSON String from the emoncms server and transforms it into an ArrayList
+    // of RecordingStation objects
+    public ArrayList<RecordingStation> jsonToRecordingStationList(String jsonText){
+
+        try {
+            // Create an ArrayList of RecordingStation Objects with the variable name recordingStations
+            ArrayList<RecordingStation> recordingStations = new ArrayList<>();
+
+            // This changes the JSON String into a JSON object. The response for this call consists of
+            // one JSON array with individual objects for each node added to the Emon CMS platform
+            JSONArray parentJSON = new JSONArray(jsonText);
+            JSONObject childJSON;
+
+            if (parentJSON.length()>0) {
+                // Cycles through all objects within the JSON array
+                for (int i=0; i<parentJSON.length(); i++){
+
+                    // Initialising the variables needed for the RecordingStation constructor
+                    int id =0;
+                    String name="";
+                    String tag="";
+                    int time=0;
+                    int powerReading=0;
+
+                    // Setting childJSON as an object in the JSON array at position i
+                    childJSON = parentJSON.getJSONObject(i);
+
+                    //Checks if ID field exists and is not null
+                    if (childJSON.has("id") && !childJSON.isNull("id")){
+                        id = childJSON.getInt("id");
+                    }
+                    //Checks if name field exists and is not null
+                    if (childJSON.has("name") && !childJSON.isNull("name")){
+                        name = childJSON.getString("name");
+                    }
+                    //Checks if tag field exists and is not null
+                    if (childJSON.has("tag") && !childJSON.isNull("tag")){
+                        tag = childJSON.getString("tag");
+                    }
+                    //Checks if time field exists and is not null
+                    if (childJSON.has("time") && !childJSON.isNull("time")){
+                        time = childJSON.getInt("time");
+                    }
+                    //Checks if value field exists and is not null
+                    if (childJSON.has("value") && !childJSON.isNull("value")){
+                        powerReading = childJSON.getInt("value");
+                    }
+
+                    //Creating new RecordingStation object with the values and adding it to the ArrayList for each loop
+                    RecordingStation recordingStation = new RecordingStation(id, name, tag, time, powerReading);
+                    recordingStations.add(recordingStation);
+
+                }
+            }
+
+            return recordingStations;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    // Gets the subset of Recording Stations in selected in settings from the full list supplied to it
+    public ArrayList<RecordingStation> getRecordingStationsInSettings(ArrayList<RecordingStation> recordingStations, Account account, boolean firstTime){
+        SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
+        if (recordingStations.size()>0) {
+
+
+
+
+        /* This function takes in an array list of the recording stations and returns an array list
+         * of recording stations which is a subset of the of the input. This subset contains all the
+         * recording stations contained within the setting preferences
+         */
+            Set<String> recordingStationsInSettings = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
+            Set<String> chosenRecordingStations = new HashSet<>();
+
+
+            if (firstTime) {
+                // Creates an array list of names of the stations in the form "TAG - NAME"
+                ArrayList<String> recordingStationNames = new ArrayList<>();
+                for (int i=0; i<recordingStations.size(); i++){
+                    recordingStationNames.add(recordingStations.get(i).getStationTag() + " - " + recordingStations.get(i).getStationName());
+
+                }
+
+                // Sort List Alphabetically
+                Collections.sort(recordingStationNames, String.CASE_INSENSITIVE_ORDER);
+
+                // Adds these names to a new String Array List to chosenRecordingStations
+                chosenRecordingStations.addAll(recordingStationNames);
+
+                AccountConfig accountConfig = new AccountConfig(getBaseContext());
+                accountConfig.setStationListInSettings(account.getAccountID(), chosenRecordingStations);
+            }
+
+            // Compare strings in settings (in String set recordingStationsInSettings) with the ArrayList of
+            // RecordingStations (in recordingStations)
+            ArrayList<RecordingStation> recordingStationsForAdapter = new ArrayList<>();
+            for (String nameTag:recordingStationsInSettings){
+                for (int j = 0; j < recordingStations.size(); j++){
+                    String currentStn;
+                    currentStn = recordingStations.get(j).getStationTag() + " - " + recordingStations.get(j).getStationName();
+
+
+                    if (nameTag.contains(currentStn)){
+                        recordingStationsForAdapter.add(recordingStations.get(j));
+
+                    }
+                }
+            }
+
+            /*for (RecordingStation recordingStation:recordingStationsForAdapter){
+                Log.i("SERC Log", "Recording Stations for adapter: " + recordingStation.getStationTag() + " - " + recordingStation.getStationName());
+            }*/
+
+            return recordingStationsForAdapter;
+
+
+        } else {
+
+            return recordingStations;
+        }
 
     }
 
@@ -1167,45 +1225,6 @@ public class MainActivityRecyclerView extends AppCompatActivity {
             }
         });
 
-        /*adapter.setOnItemLongClickListener(new RecyclerViewAdapter.OnItemLongClickListener() {
-            @Override
-            public void onItemLongClick(View itemView, final int position) {
-
-                final int currentPosition = position;
-
-                Date currentTime = new Date(adapter.getRecordingStation(position).getStationTime()*1000);
-                SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy h:mm a");
-                final String stationTime = sdf.format(currentTime);
-
-                LongPressPopup popup = new LongPressPopupBuilder(MainActivityRecyclerView.this)// A Context object for the builder constructor
-                        .setTarget(itemView)
-                        .setPopupView(R.layout.popup_layout, new PopupInflaterListener() {
-                            @Override
-                            public void onViewInflated(@Nullable String popupTag, View root) {
-                                TextView popup_ID = (TextView) root.findViewById(R.id.popup_location_id);
-                                TextView popup_Tag = (TextView) root.findViewById(R.id.popup_location_tags);
-                                TextView popup_Name = (TextView) root.findViewById(R.id.popup_location_name);
-                                TextView popup_reading = (TextView) root.findViewById(R.id.popup_location_reading);
-                                TextView popup_time = (TextView) root.findViewById(R.id.popup_location_time);
-
-                                popup_ID.setText( String.valueOf(adapter.getRecordingStation(currentPosition).getStationID()));
-                                popup_Name.setText( adapter.getRecordingStation(currentPosition).getStationName());
-                                popup_Tag.setText(adapter.getRecordingStation(currentPosition).getStationTag());
-                                popup_reading.setText(String.valueOf(adapter.getRecordingStation(currentPosition).getStationValueReading())+ "W");
-                                popup_time.setText(stationTime);
-
-                            }
-                        })// The View to show when long pressed
-                        .setCancelTouchOnDragOutsideView(true)
-                        .build();// This will give you a LongPressPopup object
-
-                // You can also chain it to the .build() method call above without declaring
-                // the "popup" variable before
-                // From this moment, the touch events are registered and, if long pressed,
-                // will show the given view inside the popup, call unregister() to stop
-                popup.register();
-            }
-        });*/
     }
 
     // Returns the diagonal screen size of the device in inches
