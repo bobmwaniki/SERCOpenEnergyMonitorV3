@@ -26,7 +26,7 @@ import android.view.MenuItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -197,10 +197,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragment {
         // Declaring some global variables to be used in the onCreate method
-        MultiSelectListPreference stationMultiSelect;
+       /* MultiSelectListPreference stationMultiSelect;
         SharedPreferences appSettings;
         Set<String> recordingStationsSet;
-        Set<String> recordingStationsFullSet;
+        Set<String> recordingStationsFullSet;*/
 
 
         @Override
@@ -412,52 +412,57 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 }
             });
 
+            setUpLocationsMultipreference();
+
 
 
         }
 
-        private void setUpMultiSelectPreference(){
+        private void setUpAccountMultiSelectPreference(){
             MultiSelectListPreference accountMultiPref = (MultiSelectListPreference) findPreference("pref_selected_accounts");
             AccountConfig accountConfig = new AccountConfig(getActivity().getBaseContext());
             String[] accountIDs = accountConfig.getAccountIDArray();
             int accountIDListSize = accountIDs.length;
             // String sets to be used in the MultiSelectListPreference
-            String[] accountNames = new String[accountIDListSize];
-            // Fill the String array and Set with values
-            for (int i=0; i<accountIDListSize;i++){
-                if(!accountIDs[i].isEmpty()){
-                    // Get Account Name from ID
-                    accountNames[i] = accountConfig.getAccountFromID(accountIDs[i]).getAccountName();
+            if (accountIDListSize>0) {
+                String[] accountNames = new String[accountIDListSize];
+                // Fill the String array and Set with values
+                for (int i=0; i<accountIDListSize;i++){
+                    if(!accountIDs[i].isEmpty()){
+                        // Get Account Name from ID
+                        accountNames[i] = accountConfig.getAccountFromID(accountIDs[i]).getAccountName();
 
+                    }
                 }
+
+                accountMultiPref.setEntries(accountNames);
+                accountMultiPref.setEntryValues(accountIDs);
             }
 
-            accountMultiPref.setEntries(accountNames);
-            accountMultiPref.setEntryValues(accountIDs);
 
+        }
 
-            // For the locations
-            MultiSelectListPreference stationMultiSelect;
-            final SharedPreferences appSettings;
-            Set<String> recordingStationsSet;
-            Set<String> recordingStationsFullSet;
+        private void setUpLocationsMultipreference(){
+
             /* Gets the MultiSelectListPreference and adds the String set stored in selected_station_list
              * to its entries and entry values. The selected_station_list string set is set on the
              * onCreate method of the in the main activity
              */
-            stationMultiSelect = (MultiSelectListPreference) findPreference("stations_multi_list");
-            appSettings = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            recordingStationsSet = appSettings.getStringSet("selected_station_list", Collections.<String>emptySet());
-            recordingStationsFullSet = appSettings.getStringSet("full_station_list", Collections.<String>emptySet());
+            MultiSelectListPreference stationMultiSelect = (MultiSelectListPreference) findPreference("stations_multi_list");
+            final SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            Set<String> recordingStationsSet = appSettings.getStringSet("selected_station_list", new HashSet<String>());
+            Set<String> recordingStationsFullSet = appSettings.getStringSet("full_station_list", new HashSet<String>());
 
             //AccountConfig accountConfig = new AccountConfig(getActivity().getBaseContext());
+            AccountConfig accountConfig = new AccountConfig(getActivity().getBaseContext());
             ArrayList<Account> accounts = accountConfig.getAllAccounts();
-            for (Account account:accounts){
-                if (!account.getStationList().isEmpty()) {
-                    recordingStationsFullSet.addAll(account.getStationList());
+            if (!accounts.isEmpty()) {
+                for (Account account:accounts){
+                    if (!account.getStationList().isEmpty()) {
+                        recordingStationsFullSet.addAll(account.getStationList());
+                    }
                 }
             }
-
 
 
             // Sizes of the String sets
@@ -519,7 +524,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         @Override
         public void onResume() {
             super.onResume();
-            setUpMultiSelectPreference();
+            setUpAccountMultiSelectPreference();
         }
 
         @Override

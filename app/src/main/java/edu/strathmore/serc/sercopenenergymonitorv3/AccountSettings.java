@@ -28,6 +28,7 @@ public class AccountSettings extends AppCompatActivity {
     private EditText account_link ;
     private boolean newAccount;
     private boolean noAccountFound;
+    private boolean firstTimeLaunch;
 
     private Account account;
 
@@ -48,7 +49,7 @@ public class AccountSettings extends AppCompatActivity {
             newAccount = extras.getBoolean("new_account", false);
             account_ID = extras.getString("account_ID", null);
             noAccountFound = extras.getBoolean("no_account_found", false);
-
+            firstTimeLaunch = extras.getBoolean("first_time_launch", false);
         }
 
         account_name = (EditText) findViewById(R.id.account_name);
@@ -57,7 +58,7 @@ public class AccountSettings extends AppCompatActivity {
 
         final AccountConfig accountConfig = new AccountConfig(this);
 
-        if (newAccount || noAccountFound){
+        if (newAccount || noAccountFound || firstTimeLaunch){
             account_ID = accountConfig.addAccount();
             account = accountConfig.getAccountFromID(account_ID);
             setEditTextBoxes();
@@ -72,6 +73,7 @@ public class AccountSettings extends AppCompatActivity {
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 // Get data from the Edit Text Fields
                 account.setAccountName(account_name.getText().toString());
                 account.setApiKey(account_api.getText().toString());
@@ -83,34 +85,59 @@ public class AccountSettings extends AppCompatActivity {
 
 
 
-                //Go Back to
-                Intent upIntent = NavUtils.getParentActivityIntent(AccountSettings.this);
-                if (NavUtils.shouldUpRecreateTask(AccountSettings.this, upIntent)) {
-                    // This activity is NOT part of this app's task, so create a new task
-                    // when navigating up, with a synthesized back stack.
 
-                    TaskStackBuilder.create(getBaseContext())
-                            // Add all of this activity's parents to the back stack
-                            .addNextIntentWithParentStack(upIntent)
-                            // Navigate up to the closest parent
-                            .startActivities();
-                } else {
-                    // This activity is part of this app's task, so simply
-                    // navigate up to the logical parent activity.
-                    NavUtils.navigateUpTo(AccountSettings.this, upIntent);
-                }
+                    /*SharedPreferences sharePrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                    SharedPreferences.Editor editor = sharePrefs.edit();
+                    Set<String> accountIDs = new HashSet<String>();
+                    accountIDs.add(account.getAccountID());
+                    editor.putStringSet("selected_account_list",accountIDs);*/
 
-                if (noAccountFound){
-                    Toast.makeText(getBaseContext(), "Remember to choose which stations to display from General settings",
+
+                if (firstTimeLaunch) {
+                    /*SharedPreferences sharePrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                    SharedPreferences.Editor editor = sharePrefs.edit();
+                    Set<String> accountIDs = new HashSet<String>();
+                    accountIDs.add(account.getAccountID());
+                    editor.putStringSet("selected_account_list",accountIDs);*/
+                    Toast.makeText(getBaseContext(), "Account set up. Go to Account Settings to choose which locations to display",
                             Toast.LENGTH_LONG).show();
-                } else{
-                    Toast.makeText(getBaseContext(), "Account details saved", Toast.LENGTH_SHORT).show();
+                    Intent startMainActivity = new Intent(getBaseContext(), MainActivityRecyclerView.class);
+                    startActivity(startMainActivity);
                 }
+                else {
 
+
+                    //Go Back to
+                    Intent upIntent = NavUtils.getParentActivityIntent(AccountSettings.this);
+                    if (NavUtils.shouldUpRecreateTask(AccountSettings.this, upIntent)) {
+                        // This activity is NOT part of this app's task, so create a new task
+                        // when navigating up, with a synthesized back stack.
+
+                        TaskStackBuilder.create(getBaseContext())
+                                // Add all of this activity's parents to the back stack
+                                .addNextIntentWithParentStack(upIntent)
+                                // Navigate up to the closest parent
+                                .startActivities();
+                    } else {
+                        // This activity is part of this app's task, so simply
+                        // navigate up to the logical parent activity.
+                        NavUtils.navigateUpTo(AccountSettings.this, upIntent);
+                    }
+
+                    if (noAccountFound){
+                        Toast.makeText(getBaseContext(), "Remember to choose which stations to display from General settings",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    else{
+                        Toast.makeText(getBaseContext(), "Account details saved", Toast.LENGTH_SHORT).show();
+
+                    }
+
+                }
             }
+
+
         });
-
-
     }
 
     private void setEditTextBoxes(){

@@ -26,10 +26,10 @@
         >
 
         <MultiSelectListPreference
+            android:key="stations_multi_list"
             android:defaultValue="@array/pref_station_list_values"
             android:entries="@array/pref_stations_list_titles"
             android:entryValues="@array/pref_station_list_values"
-            android:key="stations_multi_list"
             android:summary="@string/pref_multi_list_summary"
             android:title="@string/pref_list_of_stations"/>
 

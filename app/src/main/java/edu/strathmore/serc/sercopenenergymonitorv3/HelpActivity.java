@@ -15,13 +15,14 @@ import java.util.List;
 
 public class HelpActivity extends AhoyOnboarderActivity {
 
+    private boolean helpPageShown = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
 
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
-
 
 
         AhoyOnboarderCard ahoyOnboarderCard1 = new AhoyOnboarderCard("Welcome",
@@ -34,7 +35,7 @@ public class HelpActivity extends AhoyOnboarderActivity {
                 "Click on any location to access its historical or live graph",
                 R.drawable.easel_icon);
         AhoyOnboarderCard ahoyOnboarderCard4 = new AhoyOnboarderCard("Account",
-                "Please note that in order to communicate with the platform, you will be requested to provide some information",
+                "Please note that in order to communicate with the platform, you will be requested to provide some account information",
                 R.drawable.color_profile_icon);
         AhoyOnboarderCard ahoyOnboarderCard5 = new AhoyOnboarderCard("API Key",
                 "The first is the READ API key, which can be found by logging into your Emoncms account under \'My Account\'",
@@ -66,7 +67,7 @@ public class HelpActivity extends AhoyOnboarderActivity {
             //page.setIconLayoutParams(width, height, marginTop, marginLeft, marginRight, marginBottom);
         }
 
-        boolean helpPageShown = appSettings.getBoolean("help_page_shown",false);
+        helpPageShown = appSettings.getBoolean("help_page_shown",false);
         // Provides a different button depending on whether or not the help page has been shown before
         if (helpPageShown) {
             setFinishButtonTitle("Finish");
@@ -95,7 +96,31 @@ public class HelpActivity extends AhoyOnboarderActivity {
 
     @Override
     public void onFinishButtonPressed() {
-        Intent goToMain = new Intent(this, MainActivityRecyclerView.class);
-        startActivity(goToMain);
+
+        if (helpPageShown) {
+            finish();
+        } else {
+            Intent startMainPage = new Intent(getApplicationContext(), MainActivityRecyclerView.class);
+            startMainPage.putExtra("first_launch", true);
+            startActivity(startMainPage);
+        }
+        /*Intent upIntent = NavUtils.getParentActivityIntent(HelpActivity.this);
+        if (NavUtils.shouldUpRecreateTask(HelpActivity.this, upIntent)) {
+            // This activity is NOT part of this app's task, so create a new task
+            // when navigating up, with a synthesized back stack.
+
+            TaskStackBuilder.create(getBaseContext())
+                    // Add all of this activity's parents to the back stack
+                    .addNextIntentWithParentStack(upIntent)
+                    // Navigate up to the closest parent
+                    .startActivities();
+        } else {
+            // This activity is part of this app's task, so simply
+            // navigate up to the logical parent activity.
+            NavUtils.navigateUpTo(HelpActivity.this, upIntent);
+        }*/
+
+        /*Intent goToMain = new Intent(this, MainActivityRecyclerView.class);
+        startActivity(goToMain);*/
     }
 }
