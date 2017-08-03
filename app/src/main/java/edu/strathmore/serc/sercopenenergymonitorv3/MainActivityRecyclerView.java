@@ -917,7 +917,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         if (firstTimeLaunch) {
             Log.i("SERC Log","Running first time setup");
             // Binding the adapter to the RecyclerView
-            adapter = new RecyclerViewAdapter(getBaseContext(), new ArrayList<RecordingStation>());
+            adapter = new RecyclerViewAdapter(getBaseContext(), new ArrayList<RecordingStation>(), account);
             RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_main_activity);
             recyclerView.setAdapter(adapter);
 
@@ -1009,7 +1009,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     // Actual steps needed to set up the RecyclerView
     private void setUpSteps(String output, Account account, boolean firstTime, boolean clearScreen) {
 
-        Log.i("SERC Log", "Clear Screen: " + clearScreen);
+        //Log.i("SERC Log", "Clear Screen: " + clearScreen);
 
 
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
@@ -1017,16 +1017,16 @@ public class MainActivityRecyclerView extends AppCompatActivity {
         // Get list of RecordingStation objects from response
         ArrayList<RecordingStation> recordingStations = jsonToRecordingStationList(output);
 
-        for (RecordingStation station:recordingStations){
+       /* for (RecordingStation station:recordingStations){
             Log.i("SERC Log", "All Locations: " + station.getStationTag() + " - " + station.getStationName());
-        }
+        }*/
 
         // Get subset of those locations selected in settings
         ArrayList<RecordingStation> recordingStationsForAdapter = getRecordingStationsInSettings(recordingStations, account, firstTime);
 
-        for (RecordingStation station:recordingStationsForAdapter){
+        /*for (RecordingStation station:recordingStationsForAdapter){
             Log.i("SERC Log", "Locations for adapter: " + station.getStationTag() + " - " + station.getStationName());
-        }
+        }*/
 
         if (recordingStationsForAdapter.size()>0) {
             // Arranges the Stations alphabetically by tag name
@@ -1057,11 +1057,11 @@ public class MainActivityRecyclerView extends AppCompatActivity {
 
             boolean disableAnimations = appSettings.getBoolean("pref_general_disable_animations", false);
             //Log.i("SERC Log","");
-            Log.i("SERC Log","Adapter null: " + String.valueOf(adapter==null));
+            //Log.i("SERC Log","Adapter null: " + String.valueOf(adapter==null));
             if (adapter!=null) {
 
                 if (isShowingLive || disableAnimations) {
-                    adapter.notifyMassDataChange(recordingStationsForAdapter, clearScreen);
+                    adapter.notifyMassDataChange(recordingStationsForAdapter, clearScreen, account);
 
 
                 } else{
@@ -1073,7 +1073,8 @@ public class MainActivityRecyclerView extends AppCompatActivity {
                         Log.i("SERC Log","Smooth Clear run");
                         adapter.smoothClear();
                     }
-                    adapter.addAll(recordingStationsForAdapter);
+
+                    adapter.addAll(recordingStationsForAdapter,account);
 
 
                 }
@@ -1328,6 +1329,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         stopRepeatingAction();
+        stopRefreshLayoutRefreshing();
     }
 
     // Stop runnable once activity stops
@@ -1335,6 +1337,7 @@ public class MainActivityRecyclerView extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         stopRepeatingAction();
+        stopRefreshLayoutRefreshing();
     }
 
 

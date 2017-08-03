@@ -191,7 +191,8 @@ public class GraphTabbed extends AppCompatActivity {
         SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(this);
         AccountConfig accountConfig = new AccountConfig(getBaseContext());
         Account account = accountConfig.getAccountFromID(accountID);
-        ROOT_LINK = account.getRootLink() + "feed/data.json?id=";
+        ROOT_LINK = account.getRootLink();
+        ROOT_LINK += "feed/data.json?id=";
         Log.i("SERC Log", "Link: " + ROOT_LINK);
         API_KEY = account.getApiKey();
         Log.i("SERC Log", "API: " + API_KEY);
@@ -252,6 +253,7 @@ public class GraphTabbed extends AppCompatActivity {
         setLink();
 
     }
+
 
 
     // Method for drawing the graph. Requires the HTTP link to the JSON file

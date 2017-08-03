@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +20,18 @@ import java.util.ArrayList;
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
 
     // Member variable for the list of RecordingStation objects
-    ArrayList<RecordingStation> mRecordingStations;
+    private ArrayList<RecordingStation> mRecordingStations;
 
     // Storing context for easy access
-    Context mContext;
+    private Context mContext;
+
+    // Account
+    private Account mCurrentAccount;
+
+    // Needed to keep track which location for the new account is the first for the account identifier TextView
+    private int mFirstLocation = 0;
+    private ArrayList<Integer> mFirstLocationPositions = new ArrayList<>();
+    private boolean newScreen = true;
 
 
 
@@ -48,12 +57,22 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         longClickListener = clickListener;
     }
 
+    private void resetFirstLocations(){
+        mFirstLocation = 0;
+        mFirstLocationPositions.clear();
+        mFirstLocationPositions.add(0);
+    }
+    private void addFirstLocation (int location){
+        mFirstLocationPositions.add(location);
+    }
+
 
     public class ViewHolder extends RecyclerView.ViewHolder{
 
-        public TextView nameTextView;
-        public TextView tagTextView;
-        public TextView powerReadingTextView;
+        private TextView nameTextView;
+        private TextView tagTextView;
+        private TextView powerReadingTextView;
+        private TextView accountIdentifierTextView;
 
         public ViewHolder(final View itemView) {
             super(itemView);
@@ -62,6 +81,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             nameTextView = (TextView) itemView.findViewById(R.id.station_name);
             tagTextView = (TextView) itemView.findViewById(R.id.station_tag);
             powerReadingTextView = (TextView) itemView.findViewById(R.id.station_power_reading);
+            accountIdentifierTextView = (TextView) itemView.findViewById(R.id.account_identifier_textview);
 
             // Setup the click listener
             itemView.setOnClickListener(new View.OnClickListener() {
@@ -103,9 +123,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
 
     // Constructor for the Adapter
-    public RecyclerViewAdapter(Context context, ArrayList<RecordingStation> recordingStations){
+    public RecyclerViewAdapter(Context context, ArrayList<RecordingStation> recordingStations, Account account){
         mContext = context;
         mRecordingStations = recordingStations;
+        mCurrentAccount = account;
+        resetFirstLocations();
 
     }
 
@@ -128,6 +150,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         if (mRecordingStations.size()>0) {
+            Log.i(" SERC Adapter", "mFirstLocation onBindViewHolder: " + mFirstLocation);
             // Get the RecordingStation based on position
             RecordingStation recordingStation = mRecordingStations.get(position);
 
@@ -135,6 +158,21 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             TextView nameTV = holder.nameTextView;
             TextView tagTV = holder.tagTextView;
             TextView powerReadingTV = holder.powerReadingTextView;
+            TextView accountIdentifierTV = holder.accountIdentifierTextView;
+
+
+
+            //Account identifier
+            if(mFirstLocationPositions.contains(position)){
+                accountIdentifierTV.setVisibility(View.VISIBLE);
+                if (position == mFirstLocationPositions.get(mFirstLocationPositions.size() - 1)) {
+                    Log.i("SERC Log","Current Account set: " + mCurrentAccount.getAccountName());
+                    accountIdentifierTV.setText(mCurrentAccount.getAccountName());
+                }
+            }else {
+                accountIdentifierTV.setVisibility(View.GONE);
+            }
+
 
             SharedPreferences appSettings = PreferenceManager.getDefaultSharedPreferences(mContext);
             boolean switchNameTag = appSettings.getBoolean("pref_general_switch_name_tag", false);
@@ -169,6 +207,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void smoothClear(){
         int size = mRecordingStations.size();
         mRecordingStations.clear();
+        resetFirstLocations();
+        newScreen = true;
 
         for (int i=0; i<size; i++){
             notifyItemRemoved(i);
@@ -178,26 +218,49 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     public void clear(){
         mRecordingStations.clear();
+        resetFirstLocations();
+        newScreen = true;
         notifyDataSetChanged();
 
     }
-    // Add list of items
-    public void addAll(ArrayList<RecordingStation> recordingStations){
-        for (int i=0; i<recordingStations.size(); i++){
 
+    // Add list of items
+    public void addAll(ArrayList<RecordingStation> recordingStations, Account account){
+        mCurrentAccount = account;
+//        Log.i("SERC Log","Account received from addAll: " + account.getAccountName());
+        if (newScreen) {
+            newScreen = false;
+        }
+        else{
+            mFirstLocation += mRecordingStations.size();
+            addFirstLocation(mFirstLocation);
+        }
+//        Log.i(" SERC Adapter", "mFirstLocation addAll: " + mFirstLocation);
+        for (int i=0; i<recordingStations.size(); i++){
             mRecordingStations.add(recordingStations.get(i));
             notifyItemChanged(i);
         }
 
     }
 
-    public void notifyMassDataChange(ArrayList<RecordingStation> recordingStations, boolean clearScreen){
+    public void notifyMassDataChange(ArrayList<RecordingStation> recordingStations, boolean clearScreen, Account account){
+        mCurrentAccount = account;
         if (clearScreen) {
             mRecordingStations.clear();
             mRecordingStations = recordingStations;
+            resetFirstLocations();
+            newScreen = true;
             notifyDataSetChanged();
         }
         else {
+            if (newScreen) {
+                newScreen = false;
+            }
+            else{
+                mFirstLocation += mRecordingStations.size();
+                addFirstLocation(mFirstLocation);
+            }
+//            Log.i(" SERC Adapter", "mFirstLocation notifyMassDataChange: " + mFirstLocation);
             for(RecordingStation station:recordingStations){
                 mRecordingStations.add(station);
             }

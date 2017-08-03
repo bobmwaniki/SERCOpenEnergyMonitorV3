@@ -130,6 +130,10 @@ public class AccountConfig {
         SharedPreferences.Editor editor = appSettings.edit();
 
         String rootLink_key = PREF_ACCOUNT_PREFIX + accountID + "_rootLink";
+        rootLink = fixLink(rootLink);
+        if(!rootLink.endsWith("/")){
+            rootLink = rootLink  + "/";
+        }
 
         editor.putString(rootLink_key, rootLink);
         editor.apply();
@@ -146,6 +150,28 @@ public class AccountConfig {
         editor.putStringSet(stationList_key, stationList);
         editor.apply();
 
+    }
+
+    private String fixLink (String linkToFix){
+        String mFixedString = "";
+        // Removes all spaces
+        String trimedLinkToFix = linkToFix.replace(" ","");
+
+        // Adds a "/" if it is not the last character in the link
+        if (!trimedLinkToFix.matches(".*[/]")){
+            mFixedString = trimedLinkToFix + "/";
+        }
+
+        // Checks if the link starts with https:// or http:// and adds it if not
+        if (trimedLinkToFix.startsWith("https://") || trimedLinkToFix.startsWith("http://")){
+            mFixedString = trimedLinkToFix;
+        }
+        else {
+            mFixedString = "https://" + trimedLinkToFix;
+
+        }
+
+        return mFixedString;
     }
 
     // Gets all the accounts available in settings
@@ -203,6 +229,10 @@ public class AccountConfig {
                 // Get Account's root link if available
                 if(entry.getKey().contains("rootLink")){
                     rootLink = entry.getValue().toString();
+                    rootLink = fixLink(rootLink);
+                    if(!rootLink.endsWith("/")){
+                        rootLink = rootLink  + "/";
+                    }
                 }
                 // Get Account's list of available stations
                 if(entry.getKey().contains("stationList")){

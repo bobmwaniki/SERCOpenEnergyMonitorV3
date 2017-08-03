@@ -41,7 +41,7 @@
 
         <MultiSelectListPreference
             android:key="pref_selected_accounts"
-            android:title="Select Accounts"
+            android:title="Select Visible Accounts"
             android:summary="Select the accounts that will be shown on the main screen"
             android:entries="@array/pref_selected_accounts_entries"
             android:entryValues="@array/pref_selected_accounts_values"
@@ -51,7 +51,7 @@
 
         <Preference
             android:key="show_account_list"
-            android:title="Edit Accounts"
+            android:title="Edit Account Details"
             android:summary="Shows all the available accounts with options to edit or delete"
 
 
